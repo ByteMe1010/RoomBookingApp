@@ -37,3 +37,19 @@ build/
 
 ### Mac OS ###
 .DS_Store
+# Local OAuth secrets and token stores
+client_secret*.json
+credentials*.json
+tokens/
+*.token
+.env
+.env.*
+*.p12
+*.pfx
+*.key
+*.pem
+*.jks
+*.keystore
+.vs/
+hs_err_pid*.log
+replay_pid*.log

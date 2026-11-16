@@ -312,6 +312,17 @@
             </div>
           </div>
 
+          <!-- Filter Bar for Stays -->
+          <div class="filter-bar">
+            <div class="filter-pills" id="stays-status-filters">
+              <button class="filter-pill active" data-status="ALL">All Stays</button>
+              <button class="filter-pill" data-status="PENDING">Pending Check-In</button>
+              <button class="filter-pill" data-status="ACTIVE">Active (Checked In)</button>
+              <button class="filter-pill" data-status="FINISHED">Finished</button>
+              <button class="filter-pill" data-status="CANCELED">Canceled</button>
+            </div>
+          </div>
+
           <!-- Stays Table -->
           <div class="card-table">
             <div class="table-responsive">
@@ -467,6 +478,28 @@
         </section>
 
       </main>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       Slide-Over Guest Folio Drawer
+       ========================================================================= -->
+  <div id="folio-drawer-overlay" class="drawer-overlay hidden">
+    <div id="folio-drawer" class="drawer-panel">
+      <div class="drawer-header">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <h3 id="folio-title" style="font-size:1.15rem; font-weight:700;">Guest Folio & Billing</h3>
+            <span id="folio-status-badge"></span>
+          </div>
+          <p id="folio-subtitle" class="drawer-subtitle">Loading folio details...</p>
+        </div>
+        <button id="folio-close-btn" class="modal-close-btn" aria-label="Close Drawer">&times;</button>
+      </div>
+
+      <div id="folio-body" class="drawer-body">
+        <!-- Rendered dynamically by app.js -->
+      </div>
     </div>
   </div>
 

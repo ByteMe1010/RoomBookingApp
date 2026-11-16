@@ -143,7 +143,7 @@ const INITIAL_DATABASE = {
       room_number: '203',
       room_type: 'Family Suite',
       price_per_night: 180.00,
-      status: 'AVAILABLE'
+      status: 'BOOKED'
     },
     {
       room_id: 8,
@@ -396,10 +396,10 @@ const INITIAL_DATABASE = {
       check_out: '2026-11-24',
       rooms_wanted: 1,
       total_price: 480.00,
-      status: 'PENDING',
+      status: 'ACCEPTED',
       received_at: '2026-11-16T10:15:00',
-      decided_by: null,
-      decided_at: null
+      decided_by: 1,
+      decided_at: '2026-11-16T11:00:00'
     },
     {
       request_id: 6,
@@ -436,6 +436,24 @@ const INITIAL_DATABASE = {
       received_at: '2026-10-28T14:10:00',
       decided_by: 2,
       decided_at: '2026-10-29T11:00:00'
+    },
+    {
+      request_id: 8,
+      customer_id: null,
+      email_message_id: 'msg_bkg_20261117_008@booking.com',
+      booking_ref: 'BK-2026-99580',
+      guest_name: 'Lucas Dupont',
+      guest_phone: '+33-6-12-34-56-78',
+      meal_plan_id: null,
+      special_request: null,
+      check_in: '2026-11-25',
+      check_out: '2026-11-28',
+      rooms_wanted: 1,
+      total_price: 240.00,
+      status: 'PENDING',
+      received_at: '2026-11-17T01:30:00',
+      decided_by: null,
+      decided_at: null
     }
   ],
 
@@ -466,6 +484,15 @@ const INITIAL_DATABASE = {
       check_out: '2026-11-19',
       status: 'ACTIVE',
       created_at: '2026-11-14T12:20:00'
+    },
+    {
+      booking_id: 4,
+      request_id: 5,
+      customer_id: 6,
+      check_in: '2026-11-20',
+      check_out: '2026-11-24',
+      status: 'PENDING',
+      created_at: '2026-11-16T11:00:00'
     }
   ],
 
@@ -484,6 +511,11 @@ const INITIAL_DATABASE = {
       booking_id: 3,
       room_id: 2,
       price_per_night: 65.00
+    },
+    {
+      booking_id: 4,
+      room_id: 7,
+      price_per_night: 180.00
     }
   ],
 
@@ -676,7 +708,19 @@ function getDatabase() {
       return initial;
     }
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      // Auto-refresh if new seed items (booking 4 or request 8) are missing
+      if (
+        !parsed.booking ||
+        !parsed.booking.some((b) => b.booking_id === 4) ||
+        !parsed.booking_request ||
+        !parsed.booking_request.some((r) => r.request_id === 8)
+      ) {
+        const initial = clone(INITIAL_DATABASE);
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+        return initial;
+      }
+      return parsed;
     } catch (e) {
       console.error('Failed to parse mock database from localStorage, re-initializing...', e);
       const initial = clone(INITIAL_DATABASE);
@@ -684,7 +728,7 @@ function getDatabase() {
       return initial;
     }
   } else {
-    if (!inMemoryStore) {
+    if (!inMemoryStore || !inMemoryStore.booking.some((b) => b.booking_id === 4)) {
       inMemoryStore = clone(INITIAL_DATABASE);
     }
     return inMemoryStore;
@@ -1160,13 +1204,14 @@ export const MockAPI = {
   /**
    * Workflow: Accept a booking request.
    * - Marks request ACCEPTED
+   * - Optionally updates req.meal_plan_id if mealPlanId provided
    * - Sets decided_by and decided_at
-   * - Creates a BOOKING record
+   * - Creates a BOOKING record with status 'PENDING'
    * - Assigns requested rooms in BOOKING_ROOM
    * - Marks assigned rooms as BOOKED
-   * - Sends automated confirmation MESSAGE to customer
+   * - Sends automated confirmation MESSAGE to customer (status 'SENT' if telegram_chat_id else 'FAILED')
    */
-  acceptBookingRequest(requestId, { roomIds = [], decidedBy = 1, specialNotes = '' } = {}) {
+  acceptBookingRequest(requestId, { roomIds = [], decidedBy = 1, specialNotes = '', mealPlanId = null } = {}) {
     const db = getDatabase();
     const req = (db.booking_request || []).find((r) => String(r.request_id) === String(requestId));
     if (!req) throw new Error(`Booking request #${requestId} not found`);
@@ -1176,14 +1221,28 @@ export const MockAPI = {
 
     const timestamp = nowISO();
 
+    // Update meal_plan_id if provided
+    if (mealPlanId !== null && mealPlanId !== undefined) {
+      req.meal_plan_id = Number(mealPlanId);
+    }
+
     // 1. Ensure customer exists
     let customerId = req.customer_id;
-    if (!customerId) {
-      const newCust = this.createCustomer({
-        full_name: req.guest_name,
-        phone: req.guest_phone || null
-      });
-      customerId = newCust.customer_id;
+    let customer = customerId ? (db.customer || []).find((c) => c.customer_id === customerId) : null;
+    if (!customer) {
+      const existing = (db.customer || []).find(
+        (c) => (req.guest_phone && c.phone === req.guest_phone) || (c.full_name && req.guest_name && c.full_name.toLowerCase() === req.guest_name.toLowerCase())
+      );
+      if (existing) {
+        customer = existing;
+      } else {
+        customer = this.createCustomer({
+          full_name: req.guest_name,
+          phone: req.guest_phone || null,
+          telegram_chat_id: null
+        });
+      }
+      customerId = customer.customer_id;
     }
 
     // 2. Update booking_request status
@@ -1192,7 +1251,7 @@ export const MockAPI = {
     req.decided_at = timestamp;
     req.customer_id = customerId;
 
-    // 3. Create BOOKING record
+    // 3. Create BOOKING record with status 'PENDING'
     const newBookingId = getNextId(db, 'booking', 'booking_id');
     const newBooking = {
       booking_id: newBookingId,
@@ -1200,7 +1259,7 @@ export const MockAPI = {
       customer_id: customerId,
       check_in: req.check_in,
       check_out: req.check_out,
-      status: 'ACTIVE',
+      status: 'PENDING',
       created_at: timestamp
     };
     db.booking.push(newBooking);
@@ -1221,14 +1280,15 @@ export const MockAPI = {
       }
     });
 
-    // 5. Send automated confirmation MESSAGE
+    // 5. Send automated confirmation MESSAGE with status based on telegram_chat_id
+    const messageStatus = (customer && customer.telegram_chat_id) ? 'SENT' : 'FAILED';
     const roomNums = assignedRooms.map((r) => r.room_number).join(', ') || 'assigned room';
     const msgId = getNextId(db, 'message', 'message_id');
     db.message.push({
       message_id: msgId,
       customer_id: customerId,
       content: `Reservation ${req.booking_ref} confirmed! Room(s): ${roomNums}. Check-in: ${req.check_in}, Check-out: ${req.check_out}.`,
-      status: 'SENT',
+      status: messageStatus,
       sent_at: timestamp
     });
 
@@ -1256,9 +1316,10 @@ export const MockAPI = {
   /**
    * Workflow: Deny a booking request.
    * - Marks request DENIED
-   * - Increments customer.times_denied and sets customer.last_denied_date
+   * - If customer_id is null, finds or creates CUSTOMER first and links req.customer_id
+   * - Increments customer.times_denied and sets customer.last_denied_date to today
    * - Logs note in CUSTOMER_REPORT
-   * - Sends notification MESSAGE
+   * - Sends notification MESSAGE (status 'SENT' if telegram_chat_id else 'FAILED')
    */
   denyBookingRequest(requestId, { reason = 'Room unavailable for requested dates', decidedBy = 1 } = {}) {
     const db = getDatabase();
@@ -1276,32 +1337,49 @@ export const MockAPI = {
     req.decided_at = timestamp;
 
     let customer = null;
-    if (req.customer_id) {
-      customer = (db.customer || []).find((c) => c.customer_id === req.customer_id);
-      if (customer) {
-        customer.times_denied = (customer.times_denied || 0) + 1;
-        customer.last_denied_date = today;
-
-        // Log report note
-        const repId = getNextId(db, 'customer_report', 'report_id');
-        db.customer_report.push({
-          report_id: repId,
-          customer_id: customer.customer_id,
-          booking_id: null,
-          note: `Booking request ${req.booking_ref} denied by staff. Reason: ${reason}`,
-          created_at: timestamp
-        });
-
-        // Send denial message
-        const msgId = getNextId(db, 'message', 'message_id');
-        db.message.push({
-          message_id: msgId,
-          customer_id: customer.customer_id,
-          content: `Regarding your booking request ${req.booking_ref}: Unfortunately, we are unable to accept this reservation (${reason}).`,
-          status: 'SENT',
-          sent_at: timestamp
+    if (!req.customer_id) {
+      // Find or create customer first and link req.customer_id
+      const existing = (db.customer || []).find(
+        (c) => (req.guest_phone && c.phone === req.guest_phone) || (c.full_name && req.guest_name && c.full_name.toLowerCase() === req.guest_name.toLowerCase())
+      );
+      if (existing) {
+        customer = existing;
+      } else {
+        customer = this.createCustomer({
+          full_name: req.guest_name,
+          phone: req.guest_phone || null,
+          telegram_chat_id: null
         });
       }
+      req.customer_id = customer.customer_id;
+    } else {
+      customer = (db.customer || []).find((c) => c.customer_id === req.customer_id);
+    }
+
+    if (customer) {
+      customer.times_denied = (customer.times_denied || 0) + 1;
+      customer.last_denied_date = today;
+
+      // Log report note
+      const repId = getNextId(db, 'customer_report', 'report_id');
+      db.customer_report.push({
+        report_id: repId,
+        customer_id: customer.customer_id,
+        booking_id: null,
+        note: `Booking request ${req.booking_ref} denied by staff. Reason: ${reason}`,
+        created_at: timestamp
+      });
+
+      // Send denial message with status based on customer.telegram_chat_id
+      const messageStatus = customer.telegram_chat_id ? 'SENT' : 'FAILED';
+      const msgId = getNextId(db, 'message', 'message_id');
+      db.message.push({
+        message_id: msgId,
+        customer_id: customer.customer_id,
+        content: `Regarding your booking request ${req.booking_ref}: Unfortunately, we are unable to accept this reservation (${reason}).`,
+        status: messageStatus,
+        sent_at: timestamp
+      });
     }
 
     saveDatabase(db);
@@ -1838,6 +1916,7 @@ export const MockAPI = {
 
     const bookingsBreakdown = {
       total: bookings.length,
+      pending: bookings.filter((b) => b.status === 'PENDING').length,
       active: bookings.filter((b) => b.status === 'ACTIVE').length,
       finished: bookings.filter((b) => b.status === 'FINISHED').length,
       canceled: bookings.filter((b) => b.status === 'CANCELED').length

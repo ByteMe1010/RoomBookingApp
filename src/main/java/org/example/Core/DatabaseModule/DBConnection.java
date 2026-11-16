@@ -22,9 +22,9 @@ public class DBConnection {
     private static DBConnection INSTANCE;
 
     //TODO: Fill those according to ports and paths before running the program
-    public static String databaseURL= "jdbc:sqlserver://10.166.91.161:1433;databaseName=HOTEL_DB;encrypt=true;trustServerCertificate=true;";
-    public static String databaseUsername = "sa";
-    public static String databasePassword = "YourPassword123";
+    String dbUrl = System.getenv("DB_URL") != null ? System.getenv("DB_URL") : "jdbc:sqlserver://localhost:1433;databaseName=HOTEL_DB;encrypt=true;trustServerCertificate=true;";
+    String dbUser = System.getenv("DB_USER") != null ? System.getenv("DB_USER") : "sa";
+    String dbPassword = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "YOUR_PASSWORD_HERE";
     private Connection connection;
 
     public static DBConnection getInstance(){

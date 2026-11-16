@@ -182,6 +182,53 @@
         assert('Dashboard summary returns room stats', summary.rooms && summary.rooms.total > 0);
         assert('Dashboard summary returns revenue', typeof summary.total_revenue === 'number');
 
+        // 21. Test Room Status Toggle (AVAILABLE <-> CLOSED) & Add Room
+        const testRoom = await api.rooms.create({
+          room_number: '777',
+          room_type: 'Executive Penthouse Suite',
+          price_per_night: 350.00,
+          status: 'AVAILABLE'
+        });
+        assert('Room 777 created with AVAILABLE status', testRoom.status === 'AVAILABLE');
+        const closedRoom = await api.rooms.updateStatus(testRoom.room_id, 'CLOSED');
+        assert('Room 777 toggled to CLOSED (maintenance)', closedRoom.status === 'CLOSED');
+        const reopenedRoom = await api.rooms.updateStatus(testRoom.room_id, 'AVAILABLE');
+        assert('Room 777 toggled back to AVAILABLE', reopenedRoom.status === 'AVAILABLE');
+
+        // 22. Test Item is_active Toggle and Restock
+        const newItem = await api.items.create({
+          name: 'Sparkling Mineral Water 750ml',
+          measuring_method: 'COUNT',
+          price_per_unit: 4.50,
+          stock_amount: 25.00,
+          is_active: 1
+        });
+        assert('New COUNT item created', newItem.measuring_method === 'COUNT' && newItem.stock_amount === 25);
+        const restockedItem = await api.items.adjustStock(newItem.item_id, 15);
+        assert('Item restocked by 15 units', restockedItem.stock_amount === 40);
+        const deactivatedItem = await api.items.update(newItem.item_id, { is_active: 0 });
+        assert('Item is_active toggled to 0 (archived)', deactivatedItem.is_active === 0);
+        const reactivatedItem = await api.items.update(newItem.item_id, { is_active: 1 });
+        assert('Item is_active toggled back to 1 (active)', reactivatedItem.is_active === 1);
+
+        // 23. Test Customer Search & Report Note Creation
+        const customerSearchName = await api.customers.getAll({ search: 'Alexander' });
+        assert('Customer search by name returns match', customerSearchName.some(c => c.full_name.includes('Alexander')));
+        const customerSearchPhone = await api.customers.getAll({ search: '019' });
+        assert('Customer search by phone returns match', customerSearchPhone.some(c => c.phone.includes('019')));
+
+        const newReport = await api.customerReports.create({
+          customerId: 1,
+          bookingId: null,
+          note: 'VIP guest prefers extra down feather pillows and early check-in.'
+        });
+        assert('CUSTOMER_REPORT note successfully logged', !!newReport.report_id && newReport.customer_id === 1);
+
+        // 24. Test Telegram Delivery Message Logs
+        const customerMsgs = await api.messages.getAll(1);
+        assert('Customer #1 messages retrieved with delivery status', Array.isArray(customerMsgs) && customerMsgs.length > 0);
+        assert('Message has valid status in [SENT, FAILED]', ['SENT', 'FAILED'].includes(customerMsgs[0].status));
+
         console.log('--- ALL TESTS COMPLETED ---');
         console.log(`TOTAL CHECKS: ${results.length}, FAILURES: ${results.filter(r => r.startsWith('FAIL')).length}`);
 

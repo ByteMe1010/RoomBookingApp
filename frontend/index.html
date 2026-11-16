@@ -353,10 +353,16 @@
         <section id="view-rooms" class="view-panel">
           <div class="view-header">
             <div>
-              <h2>Room Management</h2>
-              <p>Live occupancy status, rates, and maintenance control</p>
+              <h2>Room Management & Kitchen Summary</h2>
+              <p>Live occupancy status, maintenance controls, room rates, and active meal counts</p>
             </div>
             <div class="header-actions">
+              <button id="btn-add-room-modal" class="btn btn-primary btn-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Add Room</span>
+              </button>
               <button id="btn-refresh-rooms" class="btn btn-outline btn-sm">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
@@ -364,6 +370,11 @@
                 <span>Refresh</span>
               </button>
             </div>
+          </div>
+
+          <!-- Kitchen Meal Summary Panel -->
+          <div class="kitchen-summary-card" id="kitchen-meal-summary">
+            <!-- Populated dynamically by app.js -->
           </div>
 
           <!-- Room Status Filter Bar -->
@@ -393,6 +404,12 @@
               <p>Hotel supplies, room service items, count-based goods and continuous liquids/bulk</p>
             </div>
             <div class="header-actions">
+              <button id="btn-add-item-modal" class="btn btn-primary btn-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Add Supply Item</span>
+              </button>
               <button id="btn-refresh-inventory" class="btn btn-outline btn-sm">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
@@ -422,8 +439,8 @@
                     <th>Measuring Method</th>
                     <th>Unit Price</th>
                     <th>Current Stock</th>
-                    <th>Status</th>
-                    <th>Quick Adjust</th>
+                    <th>Active Status</th>
+                    <th>Stock Actions</th>
                   </tr>
                 </thead>
                 <tbody id="tbody-inventory">
@@ -441,8 +458,8 @@
         <section id="view-customers" class="view-panel">
           <div class="view-header">
             <div>
-              <h2>Customer Directory</h2>
-              <p>Guest profiles, denial audit history, Telegram channels, and incident notes</p>
+              <h2>Customer Directory & Telegram Logs</h2>
+              <p>Guest profiles, Telegram onboarding, denial audit history, delivery logs, and incident reports</p>
             </div>
             <div class="header-actions">
               <button id="btn-refresh-customers" class="btn btn-outline btn-sm">
@@ -454,6 +471,16 @@
             </div>
           </div>
 
+          <!-- Customers Search Bar -->
+          <div class="filter-bar">
+            <div class="search-input-box" style="width: 340px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="customers-search-input" placeholder="Search customer by full name or phone...">
+            </div>
+          </div>
+
           <!-- Customers Table -->
           <div class="card-table">
             <div class="table-responsive">
@@ -461,15 +488,53 @@
                 <thead>
                   <tr>
                     <th>Customer ID</th>
-                    <th>Full Name</th>
-                    <th>Phone</th>
-                    <th>Telegram Chat ID</th>
+                    <th>Full Name & Phone</th>
+                    <th>Telegram Status</th>
+                    <th>Bot Invite Link</th>
                     <th>Denial History</th>
                     <th>Registered</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="tbody-customers">
+                  <!-- Populated dynamically by app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Telegram Message Delivery Logs (MESSAGE Table) -->
+          <div class="card-table" style="margin-top: 2rem;">
+            <div class="view-header" style="margin-bottom: 0; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--color-border); background: var(--color-surface-alt);">
+              <div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  Telegram Communications & Delivery Log (MESSAGE Table)
+                </h3>
+                <p style="font-size: 0.8rem; color: var(--color-text-muted); margin: 2px 0 0 0;">
+                  Audit log of automated reservation confirmations and rejection notices sent to guests
+                </p>
+              </div>
+              <div class="filter-pills" id="messages-status-filters">
+                <button class="filter-pill active" data-status="ALL">All Logs</button>
+                <button class="filter-pill" data-status="SENT">SENT</button>
+                <button class="filter-pill" data-status="FAILED">FAILED</button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="table-messages">
+                <thead>
+                  <tr>
+                    <th>Message ID</th>
+                    <th>Customer</th>
+                    <th>Delivery Status</th>
+                    <th>Message Content</th>
+                    <th>Sent At</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-messages">
                   <!-- Populated dynamically by app.js -->
                 </tbody>
               </table>

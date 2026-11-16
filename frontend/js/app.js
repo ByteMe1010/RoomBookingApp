@@ -22,6 +22,8 @@ const state = {
   staysFilter: 'ALL',
   roomsFilter: 'ALL',
   inventoryFilter: 'ALL',
+  customersSearch: '',
+  messagesFilter: 'ALL',
   activeFolioBookingId: null,
   cache: {
     pendingCount: 0
@@ -1266,10 +1268,114 @@ async function promptAddOrder(bookingId) {
 }
 
 // =============================================================================
-// View 3: Room Management (#rooms)
+// View 3: Rooms & Kitchen (#rooms)
 // =============================================================================
 async function renderRoomsView() {
+  await renderKitchenMealSummary();
+  await renderRoomsGrid();
+}
+
+/**
+ * Kitchen Meal Summary Panel:
+ * Counts ACTIVE bookings grouped by MEAL_PLAN (RO, BB, HB, FB)
+ */
+async function renderKitchenMealSummary() {
+  const panel = document.getElementById('kitchen-meal-summary');
+  if (!panel) return;
+
+  try {
+    const [activeBookings, mealPlans] = await Promise.all([
+      api.bookings.getAll({ status: 'ACTIVE' }),
+      api.mealPlans.getAll()
+    ]);
+
+    // Meal counts map: code -> count
+    const counts = {
+      RO: 0,
+      BB: 0,
+      HB: 0,
+      FB: 0
+    };
+
+    activeBookings.forEach((b) => {
+      let code = 'RO';
+      if (b.booking_request && b.booking_request.meal_plan_id) {
+        const mp = mealPlans.find((m) => m.meal_plan_id === b.booking_request.meal_plan_id);
+        if (mp && mp.code) {
+          code = mp.code.toUpperCase();
+        }
+      }
+      if (counts[code] !== undefined) {
+        counts[code]++;
+      } else {
+        counts.RO++;
+      }
+    });
+
+    panel.innerHTML = `
+      <div class="kitchen-summary-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/>
+          </svg>
+          <h3 style="font-size:1.05rem; font-weight:700; margin:0;">Kitchen Meal Summary (Active Checked-In Stays)</h3>
+        </div>
+        <span class="badge badge-active">${activeBookings.length} Active Stays</span>
+      </div>
+      <div class="kitchen-grid">
+        <div class="kitchen-stat-box box-ro">
+          <div class="meal-top">
+            <span class="badge badge-closed">RO</span>
+            <small style="color:var(--color-text-muted);">Room Only</small>
+          </div>
+          <div class="meal-name">Room Only</div>
+          <div class="meal-count">${counts.RO}</div>
+          <small>No catering / room-only reservation</small>
+        </div>
+
+        <div class="kitchen-stat-box box-bb">
+          <div class="meal-top">
+            <span class="badge badge-active">BB</span>
+            <small style="color:var(--color-text-muted);">Breakfast Buffet</small>
+          </div>
+          <div class="meal-name">Breakfast Included</div>
+          <div class="meal-count">${counts.BB}</div>
+          <small>Morning dining buffet covers</small>
+        </div>
+
+        <div class="kitchen-stat-box box-hb">
+          <div class="meal-top">
+            <span class="badge badge-booked">HB</span>
+            <small style="color:var(--color-text-muted);">Half Board</small>
+          </div>
+          <div class="meal-name">Half Board</div>
+          <div class="meal-count">${counts.HB}</div>
+          <small>Breakfast buffet + Dinner service</small>
+        </div>
+
+        <div class="kitchen-stat-box box-fb">
+          <div class="meal-top">
+            <span class="badge badge-warning">FB</span>
+            <small style="color:var(--color-text-muted);">Full Board</small>
+          </div>
+          <div class="meal-name">Full Board</div>
+          <div class="meal-count">${counts.FB}</div>
+          <small>All 3 daily meals (Breakfast, Lunch, Dinner)</small>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    panel.innerHTML = `<div style="color:red; font-size:0.85rem; padding:1rem;">Failed to load kitchen summary: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+/**
+ * Color-coded Room Grid (AVAILABLE green, BOOKED blue, CLOSED red)
+ * Toggle button switches AVAILABLE rooms to CLOSED (maintenance) and back
+ */
+async function renderRoomsGrid() {
   const grid = document.getElementById('rooms-grid-container');
+  if (!grid) return;
   grid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 2rem;">Loading rooms...</div>`;
 
   try {
@@ -1280,56 +1386,167 @@ async function renderRoomsView() {
       filtered = filtered.filter((r) => r.status === state.roomsFilter);
     }
 
+    if (!filtered.length) {
+      grid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 2.5rem; color:var(--color-text-muted);">No rooms found with status ${state.roomsFilter}.</div>`;
+      return;
+    }
+
     grid.innerHTML = filtered
-      .map(
-        (r) => `
-        <div class="room-card">
-          <div>
-            <div class="room-card-header">
-              <span class="room-number-lg">Room ${escapeHtml(r.room_number)}</span>
-              ${renderStatusBadge(r.status)}
+      .map((r) => {
+        // Color-coded border class: AVAILABLE green, BOOKED blue, CLOSED red
+        let statusClass = 'status-closed';
+        let actionBtnHtml = '';
+
+        if (r.status === 'AVAILABLE') {
+          statusClass = 'status-available';
+          actionBtnHtml = `<button class="btn btn-sm btn-outline btn-toggle-room-status" data-id="${r.room_id}" data-status="${r.status}" title="Switch room to CLOSED (maintenance)">Set Closed</button>`;
+        } else if (r.status === 'CLOSED') {
+          statusClass = 'status-closed';
+          actionBtnHtml = `<button class="btn btn-sm btn-primary btn-toggle-room-status" data-id="${r.room_id}" data-status="${r.status}" style="background:#10b981;" title="Switch room back to AVAILABLE">Reopen</button>`;
+        } else if (r.status === 'BOOKED') {
+          statusClass = 'status-booked';
+          actionBtnHtml = `<button class="btn btn-sm btn-outline btn-toggle-room-status" data-id="${r.room_id}" data-status="${r.status}" title="Occupied by an active or pending stay">Occupied</button>`;
+        }
+
+        return `
+          <div class="room-card ${statusClass}">
+            <div>
+              <div class="room-card-header">
+                <span class="room-number-lg">Room ${escapeHtml(r.room_number)}</span>
+                ${renderStatusBadge(r.status)}
+              </div>
+              <div class="room-type-text">${escapeHtml(r.room_type)}</div>
             </div>
-            <div class="room-type-text">${escapeHtml(r.room_type)}</div>
+            <div class="room-card-footer">
+              <div class="room-price-val">$${Number(r.price_per_night).toFixed(2)} <span>/ night</span></div>
+              ${actionBtnHtml}
+            </div>
           </div>
-          <div class="room-card-footer">
-            <div class="room-price-val">$${Number(r.price_per_night).toFixed(2)} <span>/ night</span></div>
-            <button class="btn btn-sm btn-outline btn-toggle-room-status" data-id="${r.room_id}" data-status="${r.status}">
-              ${r.status === 'CLOSED' ? 'Reopen' : (r.status === 'AVAILABLE' ? 'Set Closed' : 'View')}
-            </button>
-          </div>
-        </div>
-      `
-      )
+        `;
+      })
       .join('');
 
-    // Status toggle listeners
+    // Status toggle listeners (AVAILABLE <-> CLOSED)
     grid.querySelectorAll('.btn-toggle-room-status').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
         const currentStatus = btn.getAttribute('data-status');
-        
+
         if (currentStatus === 'BOOKED') {
-          showToast(`Room is currently occupied by a registered stay.`, 'info');
+          showToast(`Room is currently occupied by an active guest stay and cannot be placed on maintenance.`, 'warning');
           return;
         }
 
         const newStatus = currentStatus === 'AVAILABLE' ? 'CLOSED' : 'AVAILABLE';
-        await api.rooms.updateStatus(id, newStatus);
-        showToast(`Room status updated to ${newStatus}`, 'success');
-        renderRoomsView();
+        try {
+          await api.rooms.updateStatus(id, newStatus);
+          showToast(`Room status updated to ${newStatus}.`, 'success');
+          renderRoomsView();
+        } catch (err) {
+          showToast(`Failed to update room: ${err.message}`, 'error');
+        }
       });
     });
 
   } catch (err) {
-    grid.innerHTML = `<div style="color:red;">Error: ${escapeHtml(err.message)}</div>`;
+    grid.innerHTML = `<div style="grid-column: 1 / -1; color:red; padding:2rem;">Error: ${escapeHtml(err.message)}</div>`;
   }
 }
 
+/**
+ * Add Room Form:
+ * room_number, room_type, price_per_night >= 0
+ */
+async function promptAddRoomModal() {
+  const bodyHtml = `
+    <form id="form-add-room">
+      <div class="form-group">
+        <label class="form-label" for="add-room-number">Room Number / Identifier (Unique):</label>
+        <input type="text" id="add-room-number" class="form-control" placeholder="e.g. 105, 303, PH-02" maxlength="10" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="add-room-type">Room Type / Category:</label>
+        <select id="add-room-type" class="form-control" required>
+          <option value="Single Standard">Single Standard</option>
+          <option value="Double Standard" selected>Double Standard</option>
+          <option value="Double Superior Ocean View">Double Superior Ocean View</option>
+          <option value="Family Suite">Family Suite</option>
+          <option value="Executive Penthouse Suite">Executive Penthouse Suite</option>
+          <option value="Custom">Other (Custom category)...</option>
+        </select>
+        <input type="text" id="add-room-type-custom" class="form-control" placeholder="Enter custom room type..." style="display:none; margin-top:6px;">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="add-room-price">Price Per Night ($ USD, >= 0):</label>
+        <input type="number" id="add-room-price" class="form-control" step="0.01" min="0" value="95.00" required>
+      </div>
+    </form>
+  `;
+
+  const footerHtml = `
+    <button class="btn btn-outline btn-sm" id="btn-modal-cancel">Cancel</button>
+    <button class="btn btn-primary btn-sm" id="btn-modal-confirm-add-room">Create Room</button>
+  `;
+
+  openModal('Add New Hotel Room', bodyHtml, footerHtml);
+
+  const typeSelect = document.getElementById('add-room-type');
+  const typeCustom = document.getElementById('add-room-type-custom');
+  typeSelect.addEventListener('change', () => {
+    typeCustom.style.display = typeSelect.value === 'Custom' ? 'block' : 'none';
+  });
+
+  document.getElementById('btn-modal-cancel').onclick = closeModal;
+  document.getElementById('btn-modal-confirm-add-room').onclick = async () => {
+    const roomNumber = document.getElementById('add-room-number').value.trim();
+    let roomType = typeSelect.value;
+    if (roomType === 'Custom') {
+      roomType = typeCustom.value.trim() || 'Custom Room';
+    }
+    const price = parseFloat(document.getElementById('add-room-price').value);
+
+    // Enforce constraints
+    if (!roomNumber) {
+      showToast('Room number is required.', 'error');
+      return;
+    }
+    if (isNaN(price) || price < 0) {
+      showToast('Price per night must be greater than or equal to 0 (price_per_night >= 0).', 'error');
+      return;
+    }
+
+    try {
+      // Validate uniqueness
+      const existingRooms = await api.rooms.getAll();
+      if (existingRooms.some((r) => r.room_number.toLowerCase() === roomNumber.toLowerCase())) {
+        showToast(`A room with number "${roomNumber}" already exists!`, 'error');
+        return;
+      }
+
+      await api.rooms.create({
+        room_number: roomNumber,
+        room_type: roomType,
+        price_per_night: price,
+        status: 'AVAILABLE'
+      });
+
+      closeModal();
+      showToast(`Room ${roomNumber} created successfully!`, 'success');
+      renderRoomsView();
+    } catch (err) {
+      showToast(`Failed to add room: ${err.message}`, 'error');
+    }
+  };
+}
+
 // =============================================================================
-// View 4: Items & Inventory (#inventory)
+// View 4: Stock & Items (#inventory)
 // =============================================================================
 async function renderInventoryView() {
   const tbody = document.getElementById('tbody-inventory');
+  if (!tbody) return;
   tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 2rem;">Loading inventory...</td></tr>`;
 
   try {
@@ -1338,6 +1555,11 @@ async function renderInventoryView() {
     let filtered = items;
     if (state.inventoryFilter !== 'ALL') {
       filtered = filtered.filter((i) => i.measuring_method === state.inventoryFilter);
+    }
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:2.5rem; color:var(--color-text-muted);">No items found matching filter.</td></tr>`;
+      return;
     }
 
     tbody.innerHTML = filtered
@@ -1351,17 +1573,30 @@ async function renderInventoryView() {
           ? `<strong style="color:var(--status-failed-text);">${Number(item.stock_amount).toFixed(2)} ⚠️ Low Stock</strong>`
           : `<strong>${Number(item.stock_amount).toFixed(2)}</strong>`;
 
+        const isActive = Number(item.is_active) === 1;
+        // is_active toggle switch instead of delete button so historical ITEM_ORDER bills remain intact
+        const activeToggleHtml = isActive
+          ? `<button class="toggle-switch-btn active btn-toggle-item-active" data-id="${item.item_id}" data-active="1" title="Click to deactivate (archive) item"><span class="toggle-dot active"></span> Active</button>`
+          : `<button class="toggle-switch-btn inactive btn-toggle-item-active" data-id="${item.item_id}" data-active="0" title="Click to reactivate item"><span class="toggle-dot inactive"></span> Inactive</button>`;
+
+        const rowStyle = !isActive ? 'opacity: 0.7; background-color: #fafafa;' : '';
+
         return `
-          <tr>
+          <tr style="${rowStyle}">
             <td>#${item.item_id}</td>
-            <td><strong>${escapeHtml(item.name)}</strong></td>
+            <td>
+              <strong>${escapeHtml(item.name)}</strong>
+              ${!isActive ? `<span class="badge badge-closed" style="margin-left:6px; font-size:0.7rem;">Archived</span>` : ''}
+            </td>
             <td>${methodBadge}</td>
             <td>$${Number(item.price_per_unit).toFixed(2)}</td>
             <td>${stockDisplay}</td>
-            <td>${item.is_active ? renderStatusBadge('AVAILABLE') : renderStatusBadge('CLOSED')}</td>
+            <td>${activeToggleHtml}</td>
             <td>
               <div style="display:flex; gap:6px;">
-                <button class="btn btn-sm btn-outline btn-adjust-stock" data-id="${item.item_id}" data-name="${escapeHtml(item.name)}" data-stock="${item.stock_amount}">Adjust Stock</button>
+                <button class="btn btn-sm btn-primary btn-restock-item" data-id="${item.item_id}" data-name="${escapeHtml(item.name)}" data-stock="${item.stock_amount}" data-method="${item.measuring_method}" data-price="${item.price_per_unit}">
+                  Restock
+                </button>
               </div>
             </td>
           </tr>
@@ -1369,12 +1604,32 @@ async function renderInventoryView() {
       })
       .join('');
 
-    tbody.querySelectorAll('.btn-adjust-stock').forEach((btn) => {
+    // Toggle is_active switch listeners (instead of delete button!)
+    tbody.querySelectorAll('.btn-toggle-item-active').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        const currentActive = btn.getAttribute('data-active') === '1';
+        const newActive = currentActive ? 0 : 1;
+
+        try {
+          await api.items.update(id, { is_active: newActive });
+          showToast(`Item updated to ${newActive ? 'Active' : 'Inactive (Archived)'}. Historical bills preserved.`, 'info');
+          renderInventoryView();
+        } catch (err) {
+          showToast(`Failed to update item status: ${err.message}`, 'error');
+        }
+      });
+    });
+
+    // Restock listeners
+    tbody.querySelectorAll('.btn-restock-item').forEach((btn) => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
         const name = btn.getAttribute('data-name');
-        const currentStock = btn.getAttribute('data-stock');
-        promptAdjustStock(id, name, currentStock);
+        const stock = btn.getAttribute('data-stock');
+        const method = btn.getAttribute('data-method');
+        const price = btn.getAttribute('data-price');
+        promptRestockItem(id, name, stock, method, price);
       });
     });
 
@@ -1383,71 +1638,264 @@ async function renderInventoryView() {
   }
 }
 
-function promptAdjustStock(itemId, itemName, currentStock) {
+/**
+ * Add Item Form:
+ * Enforces measuring_method ('COUNT' or 'CONTINUOUS') and price_per_unit >= 0, stock_amount >= 0
+ */
+async function promptAddItemModal() {
   const bodyHtml = `
-    <p>Adjusting stock for <strong>${escapeHtml(itemName)}</strong> (Current: ${currentStock}):</p>
+    <form id="form-add-item">
+      <div class="form-group">
+        <label class="form-label" for="add-item-name">Item Name / Description:</label>
+        <input type="text" id="add-item-name" class="form-control" placeholder="e.g. Bottled Artesian Water 750ml, Ground Espresso (kg)" maxlength="100" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="add-item-method">Measuring Method:</label>
+        <select id="add-item-method" class="form-control" required>
+          <option value="COUNT" selected>COUNT (Discrete Units / Bottles / Pieces)</option>
+          <option value="CONTINUOUS">CONTINUOUS (Decimal Weight kg / Volume Liters)</option>
+        </select>
+        <small style="color:var(--color-text-muted); font-size:0.75rem;">
+          COUNT items use integer steps (1, 2, 3), while CONTINUOUS items support decimal portions (0.50 L, 1.25 kg).
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="add-item-price">Price Per Unit ($ USD, >= 0):</label>
+        <input type="number" id="add-item-price" class="form-control" step="0.01" min="0" value="5.00" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="add-item-stock">Initial Stock Amount (>= 0):</label>
+        <input type="number" id="add-item-stock" class="form-control" step="1" min="0" value="50" required>
+      </div>
+    </form>
+  `;
+
+  const footerHtml = `
+    <button class="btn btn-outline btn-sm" id="btn-modal-cancel">Cancel</button>
+    <button class="btn btn-primary btn-sm" id="btn-modal-confirm-add-item">Add Supply Item</button>
+  `;
+
+  openModal('Add New Supply / Order Item', bodyHtml, footerHtml);
+
+  const methodSelect = document.getElementById('add-item-method');
+  const stockInput = document.getElementById('add-item-stock');
+  methodSelect.addEventListener('change', () => {
+    if (methodSelect.value === 'COUNT') {
+      stockInput.step = '1';
+      stockInput.value = Math.round(Number(stockInput.value) || 0);
+    } else {
+      stockInput.step = '0.01';
+    }
+  });
+
+  document.getElementById('btn-modal-cancel').onclick = closeModal;
+  document.getElementById('btn-modal-confirm-add-item').onclick = async () => {
+    const name = document.getElementById('add-item-name').value.trim();
+    const method = methodSelect.value;
+    const price = parseFloat(document.getElementById('add-item-price').value);
+    const stock = parseFloat(stockInput.value);
+
+    // Enforce constraints
+    if (!name) {
+      showToast('Item name is required.', 'error');
+      return;
+    }
+    if (isNaN(price) || price < 0) {
+      showToast('Price per unit must be greater than or equal to 0 (price_per_unit >= 0).', 'error');
+      return;
+    }
+    if (isNaN(stock) || stock < 0) {
+      showToast('Stock amount must be greater than or equal to 0 (stock_amount >= 0).', 'error');
+      return;
+    }
+    if (!['COUNT', 'CONTINUOUS'].includes(method)) {
+      showToast('Measuring method must be COUNT or CONTINUOUS.', 'error');
+      return;
+    }
+
+    try {
+      await api.items.create({
+        name,
+        measuring_method: method,
+        price_per_unit: price,
+        stock_amount: stock,
+        is_active: 1
+      });
+
+      closeModal();
+      showToast(`Item "${name}" created successfully!`, 'success');
+      renderInventoryView();
+    } catch (err) {
+      showToast(`Failed to add item: ${err.message}`, 'error');
+    }
+  };
+}
+
+/**
+ * Restock Item Form:
+ * Enforces measuring_method ('COUNT' step 1 vs 'CONTINUOUS' step 0.01) and stock_amount >= 0
+ */
+function promptRestockItem(itemId, itemName, currentStock, method, currentPrice) {
+  const isCount = method === 'COUNT';
+  const step = isCount ? '1' : '0.01';
+
+  const bodyHtml = `
+    <p>Restocking inventory for <strong>${escapeHtml(itemName)}</strong>:</p>
+    <div style="background:var(--color-surface-alt); padding:10px 14px; border-radius:6px; margin:0.75rem 0; font-size:0.85rem; border:1px solid var(--color-border);">
+      <div>Current Stock: <strong>${Number(currentStock).toFixed(2)}</strong> (${method})</div>
+      <div>Current Unit Price: <strong>$${Number(currentPrice).toFixed(2)}</strong></div>
+    </div>
+
     <div class="form-group" style="margin-top:1rem;">
-      <label class="form-label" for="stock-delta">Adjustment Amount (+ to restock, - to write off):</label>
-      <input type="number" id="stock-delta" class="form-control" step="0.01" placeholder="e.g. 10 or -2.5" required>
+      <label class="form-label" for="restock-delta">Quantity to Add to Stock (>= 0):</label>
+      <input type="number" id="restock-delta" class="form-control" step="${step}" min="${step}" value="${isCount ? '10' : '5.00'}" required>
+      <small style="color:var(--color-text-muted); font-size:0.75rem;">
+        Stepping enforces ${method}: step=${step}
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="restock-price">Update Price Per Unit ($ USD, >= 0, optional):</label>
+      <input type="number" id="restock-price" class="form-control" step="0.01" min="0" value="${Number(currentPrice).toFixed(2)}">
     </div>
   `;
 
   const footerHtml = `
     <button class="btn btn-outline btn-sm" id="btn-modal-cancel">Cancel</button>
-    <button class="btn btn-primary btn-sm" id="btn-modal-confirm-stock">Apply Adjustment</button>
+    <button class="btn btn-primary btn-sm" id="btn-modal-confirm-restock">Apply Restock</button>
   `;
 
-  openModal(`Adjust Inventory: ${itemName}`, bodyHtml, footerHtml);
+  openModal(`Restock Supply: ${itemName}`, bodyHtml, footerHtml);
+
   document.getElementById('btn-modal-cancel').onclick = closeModal;
-  document.getElementById('btn-modal-confirm-stock').onclick = async () => {
-    const delta = Number(document.getElementById('stock-delta').value);
-    if (isNaN(delta) || delta === 0) {
-      showToast('Please enter a non-zero adjustment value.', 'error');
+  document.getElementById('btn-modal-confirm-restock').onclick = async () => {
+    const delta = parseFloat(document.getElementById('restock-delta').value);
+    const newPrice = parseFloat(document.getElementById('restock-price').value);
+
+    if (isNaN(delta) || delta <= 0) {
+      showToast('Please enter a positive restock quantity to add.', 'error');
+      return;
+    }
+    if (isNaN(newPrice) || newPrice < 0) {
+      showToast('Price per unit cannot be negative (>= 0).', 'error');
       return;
     }
 
     try {
+      // Adjust stock
       await api.items.adjustStock(itemId, delta);
+
+      // If price was modified, update unit price
+      if (Math.abs(newPrice - Number(currentPrice)) > 0.001) {
+        await api.items.update(itemId, { price_per_unit: newPrice });
+      }
+
       closeModal();
-      showToast(`Stock updated successfully!`, 'success');
+      showToast(`Restocked ${delta} units of "${itemName}" successfully!`, 'success');
       renderInventoryView();
     } catch (err) {
-      showToast(`Stock adjustment error: ${err.message}`, 'error');
+      showToast(`Restock failed: ${err.message}`, 'error');
     }
   };
 }
 
 // =============================================================================
-// View 5: Customer Directory & Reports (#customers)
+// View 5: Customer Directory & Telegram (#customers)
 // =============================================================================
 async function renderCustomersView() {
+  await renderCustomersTable();
+  await renderMessagesTable();
+}
+
+/**
+ * Customers Table:
+ * Search CUSTOMER by full_name and phone.
+ * Display times_denied, last_denied_date, Telegram status badge (Linked vs Not Linked),
+ * one-click copy button for t.me/YourBot?start=<booking_ref> using their latest booking reference.
+ */
+async function renderCustomersTable() {
   const tbody = document.getElementById('tbody-customers');
+  if (!tbody) return;
   tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 2rem;">Loading customers...</td></tr>`;
 
   try {
-    const customers = await api.customers.getAll();
+    const [customers, allRequests] = await Promise.all([
+      api.customers.getAll(),
+      api.bookingRequests.getAll()
+    ]);
 
-    tbody.innerHTML = customers
+    // Map each customer to their latest booking reference
+    const customerLatestRefMap = new Map();
+    const sortedRequests = [...allRequests].sort((a, b) => b.request_id - a.request_id);
+    sortedRequests.forEach((req) => {
+      if (req.customer_id && !customerLatestRefMap.has(req.customer_id) && req.booking_ref) {
+        customerLatestRefMap.set(req.customer_id, req.booking_ref);
+      }
+    });
+
+    // Search by full_name and phone
+    let filtered = customers;
+    if (state.customersSearch) {
+      const q = state.customersSearch.toLowerCase();
+      filtered = filtered.filter((c) => {
+        const nameMatch = c.full_name && c.full_name.toLowerCase().includes(q);
+        const phoneMatch = c.phone && c.phone.toLowerCase().includes(q);
+        return nameMatch || phoneMatch;
+      });
+    }
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 2.5rem; color:var(--color-text-muted);">No customers found matching "${escapeHtml(state.customersSearch)}".</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered
       .map((c) => {
-        const telegramHtml = c.telegram_chat_id
-          ? `<span class="badge badge-active">Chat ID: ${c.telegram_chat_id}</span>`
-          : `<span style="color:var(--color-text-muted); font-size:0.8rem;">Not linked</span>`;
+        // Telegram status badge (Linked when telegram_chat_id is non-null vs Not Linked)
+        const telegramBadge = c.telegram_chat_id
+          ? `<span class="badge badge-active" title="Telegram Chat ID: ${c.telegram_chat_id}">✓ Linked (${c.telegram_chat_id})</span>`
+          : `<span class="badge badge-closed">Not Linked</span>`;
 
+        // Denial history
         const deniedHtml = c.times_denied > 0
-          ? `<span class="badge badge-failed">${c.times_denied} Denied</span> <small style="color:var(--color-text-muted);">${c.last_denied_date || ''}</small>`
+          ? `<span class="badge badge-failed">${c.times_denied} Denied</span> <small style="display:block; color:var(--color-text-muted); font-size:0.75rem; margin-top:2px;">Last: ${c.last_denied_date || 'N/A'}</small>`
           : `<span class="badge badge-available">0 (Clean)</span>`;
+
+        // One-click copy button for t.me/YourBot?start=<booking_ref> using latest booking reference
+        const latestRef = customerLatestRefMap.get(c.customer_id);
+        let telegramLinkHtml = '';
+        if (latestRef) {
+          const fullLink = `t.me/YourBot?start=${latestRef}`;
+          telegramLinkHtml = `
+            <button class="btn-copy-telegram btn-copy-link" data-link="${fullLink}" title="Click to copy Telegram start link: ${fullLink}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span>${fullLink}</span>
+            </button>
+          `;
+        } else {
+          telegramLinkHtml = `<span style="color:var(--color-text-muted); font-size:0.78rem;">No active ref</span>`;
+        }
 
         return `
           <tr>
             <td>#${c.customer_id}</td>
-            <td><strong>${escapeHtml(c.full_name)}</strong></td>
-            <td>${escapeHtml(c.phone || 'No phone')}</td>
-            <td>${telegramHtml}</td>
+            <td>
+              <div style="font-weight:600;">${escapeHtml(c.full_name)}</div>
+              <small style="color:var(--color-text-muted);">${escapeHtml(c.phone || 'No phone')}</small>
+            </td>
+            <td>${telegramBadge}</td>
+            <td>${telegramLinkHtml}</td>
             <td>${deniedHtml}</td>
             <td><small style="color:var(--color-text-muted);">${(c.created_at || '').substring(0, 10)}</small></td>
             <td>
-              <button class="btn btn-sm btn-outline btn-view-history" data-id="${c.customer_id}">
-                View Profile & History
+              <button class="btn btn-sm btn-outline btn-customer-dossier" data-id="${c.customer_id}">
+                Dossier & Notes
               </button>
             </td>
           </tr>
@@ -1455,8 +1903,18 @@ async function renderCustomersView() {
       })
       .join('');
 
-    tbody.querySelectorAll('.btn-view-history').forEach((btn) => {
-      btn.addEventListener('click', () => showCustomerHistoryModal(btn.getAttribute('data-id')));
+    // One-click copy link listeners
+    tbody.querySelectorAll('.btn-copy-link').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const link = btn.getAttribute('data-link');
+        copyToClipboard(link);
+      });
+    });
+
+    // Customer Dossier & Notes listeners
+    tbody.querySelectorAll('.btn-customer-dossier').forEach((btn) => {
+      btn.addEventListener('click', () => showCustomerDossierModal(btn.getAttribute('data-id')));
     });
 
   } catch (err) {
@@ -1464,39 +1922,264 @@ async function renderCustomersView() {
   }
 }
 
-async function showCustomerHistoryModal(customerId) {
+// Clipboard copy utility
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(
+      () => showToast(`Copied to clipboard: ${text}`, 'success'),
+      () => fallbackCopyText(text)
+    );
+  } else {
+    fallbackCopyText(text);
+  }
+}
+
+function fallbackCopyText(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  ta.remove();
+  showToast(`Copied to clipboard: ${text}`, 'success');
+}
+
+/**
+ * Customer Dossier Modal:
+ * Displays Telegram status, one-click copy button, table of MESSAGE delivery logs (SENT / FAILED),
+ * and a form to add CUSTOMER_REPORT notes.
+ */
+async function showCustomerDossierModal(customerId) {
   try {
     const history = await api.customers.getHistory(customerId);
     if (!history) return;
 
-    const reportsHtml = (history.reports || []).length
-      ? history.reports.map((r) => `<li style="padding:4px 0; border-bottom:1px solid var(--color-border); font-size:0.82rem;"><strong>${r.created_at.substring(0, 10)}:</strong> ${escapeHtml(r.note)}</li>`).join('')
-      : '<li style="color:var(--color-text-muted); font-size:0.82rem;">No incident notes on file.</li>';
+    const c = history.customer;
 
-    const messagesHtml = (history.messages || []).length
-      ? history.messages.map((m) => `<li style="padding:4px 0; font-size:0.82rem;"><strong>[${m.status}] ${m.sent_at.substring(0, 10)}:</strong> ${escapeHtml(m.content)}</li>`).join('')
-      : '<li style="color:var(--color-text-muted); font-size:0.82rem;">No messages sent.</li>';
+    // Find their latest booking ref
+    const requests = history.requests || [];
+    const latestReq = requests.length ? requests[requests.length - 1] : null;
+    const latestRef = latestReq ? latestReq.booking_ref : null;
+    const telegramLink = latestRef ? `t.me/YourBot?start=${latestRef}` : null;
+
+    // Table of MESSAGE delivery logs (SENT / FAILED)
+    const messages = history.messages || [];
+    const messagesRowsHtml = messages.length
+      ? messages
+          .map((m) => {
+            const statusBadge = m.status === 'SENT'
+              ? `<span class="badge badge-active">SENT</span>`
+              : `<span class="badge badge-failed">FAILED</span>`;
+            return `
+              <tr>
+                <td>#${m.message_id}</td>
+                <td>${statusBadge}</td>
+                <td style="font-size:0.825rem;">${escapeHtml(m.content)}</td>
+                <td style="font-size:0.75rem; color:var(--color-text-muted);">${(m.sent_at || '').replace('T', ' ')}</td>
+              </tr>
+            `;
+          })
+          .join('')
+      : `<tr><td colspan="4" style="text-align:center; padding:1rem; color:var(--color-text-muted);">No messages logged for this guest yet.</td></tr>`;
+
+    // Existing CUSTOMER_REPORT notes
+    const reports = history.reports || [];
+    const reportsRowsHtml = reports.length
+      ? reports
+          .map((r) => `
+            <div style="background:var(--color-surface-alt); border:1px solid var(--color-border); border-left:3px solid var(--color-primary); padding:8px 12px; border-radius:6px; margin-bottom:6px; font-size:0.835rem;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:3px; color:var(--color-text-muted); font-size:0.75rem;">
+                <strong>Logged on ${(r.created_at || '').replace('T', ' ')}</strong>
+                <span>${r.booking_id ? `Booking #${r.booking_id}` : 'General Note'}</span>
+              </div>
+              <div>${escapeHtml(r.note)}</div>
+            </div>
+          `)
+          .join('')
+      : `<p style="color:var(--color-text-muted); font-size:0.825rem;">No incident notes on file.</p>`;
+
+    // Bookings select options for the report form
+    const bookings = history.bookings || [];
+    const bookingOptionsHtml = bookings
+      .map((b) => `<option value="${b.booking_id}">Booking #${b.booking_id} (${b.check_in} to ${b.check_out}) - [${b.status}]</option>`)
+      .join('');
 
     const bodyHtml = `
       <div style="font-size:0.9rem;">
-        <h4>${escapeHtml(history.customer.full_name)}</h4>
-        <p style="color:var(--color-text-muted); font-size:0.85rem;">Phone: ${escapeHtml(history.customer.phone || 'None')} | Telegram: ${history.customer.telegram_chat_id || 'None'}</p>
-        <p style="margin-top:6px;"><strong>Denials Count:</strong> ${history.customer.times_denied} (Last denied: ${history.customer.last_denied_date || 'N/A'})</p>
+        <!-- Guest Profile Header -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem; padding-bottom:0.75rem; border-bottom:1px solid var(--color-border);">
+          <div>
+            <h4 style="margin:0 0 4px 0; font-size:1.1rem; color:var(--color-text-main);">${escapeHtml(c.full_name)}</h4>
+            <p style="color:var(--color-text-muted); font-size:0.85rem; margin:0;">
+              Phone: <strong>${escapeHtml(c.phone || 'None')}</strong> | 
+              Telegram: <strong>${c.telegram_chat_id ? `Linked (Chat ID: ${c.telegram_chat_id})` : 'Not Linked'}</strong>
+            </p>
+          </div>
+          <div>
+            ${c.times_denied > 0 
+              ? `<span class="badge badge-failed">${c.times_denied} Denied</span>` 
+              : `<span class="badge badge-available">Clean Record</span>`}
+          </div>
+        </div>
 
-        <h5 style="margin-top:1rem; margin-bottom:0.4rem; color:var(--color-primary);">Customer Reports & Incident Log:</h5>
-        <ul style="list-style:none; padding-left:0;">${reportsHtml}</ul>
+        <!-- Telegram Onboarding Link Box -->
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px 14px; border-radius:6px; margin-bottom:1.25rem;">
+          <div style="font-size:0.825rem; font-weight:700; color:#166534; margin-bottom:4px;">Telegram Concierge Link:</div>
+          ${telegramLink ? `
+            <div style="display:flex; align-items:center; gap:8px;">
+              <code style="background:#ffffff; padding:4px 8px; border-radius:4px; border:1px solid #dcfce7; font-size:0.8rem; color:#15803d; flex:1;">${telegramLink}</code>
+              <button class="btn-copy-telegram" id="btn-modal-copy-tg" data-link="${telegramLink}">📋 Copy Link</button>
+            </div>
+            <small style="color:#166534; font-size:0.75rem; margin-top:4px; display:block;">
+              Send this start link to the guest to link their Telegram account with Booking Ref <strong>${latestRef}</strong>.
+            </small>
+          ` : `
+            <p style="margin:0; font-size:0.8rem; color:var(--color-text-muted);">No reservation reference recorded for this guest yet.</p>
+          `}
+        </div>
 
-        <h5 style="margin-top:1rem; margin-bottom:0.4rem; color:var(--color-primary);">Communications History:</h5>
-        <ul style="list-style:none; padding-left:0;">${messagesHtml}</ul>
+        <!-- Form to Add CUSTOMER_REPORT Notes -->
+        <div style="background:var(--color-surface); border:1px solid var(--color-border); padding:1rem; border-radius:8px; margin-bottom:1.25rem;">
+          <h5 style="margin:0 0 8px 0; color:var(--color-primary); font-size:0.95rem;">Add Incident Note / Customer Report:</h5>
+          <form id="form-add-customer-report">
+            ${bookings.length ? `
+              <div class="form-group" style="margin-bottom:8px;">
+                <label class="form-label" for="report-booking-id">Link to Specific Booking (Optional):</label>
+                <select id="report-booking-id" class="form-control" style="font-size:0.85rem; padding:0.45rem 0.65rem;">
+                  <option value="">General Incident (No specific booking)</option>
+                  ${bookingOptionsHtml}
+                </select>
+              </div>
+            ` : ''}
+            <div class="form-group" style="margin-bottom:8px;">
+              <label class="form-label" for="report-note">Incident Report / Staff Note:</label>
+              <textarea id="report-note" class="form-control" rows="2" placeholder="Record guest incident, damage note, VIP preference, or special observation..." required style="font-size:0.85rem;"></textarea>
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary" id="btn-submit-report">Save Report Note</button>
+          </form>
+        </div>
+
+        <!-- Incident Reports History -->
+        <h5 style="margin:1rem 0 0.5rem 0; color:var(--color-text-main); font-size:0.95rem;">Historical Incident Reports & Notes:</h5>
+        <div style="max-height:160px; overflow-y:auto; margin-bottom:1.25rem;">
+          ${reportsRowsHtml}
+        </div>
+
+        <!-- Table of MESSAGE Delivery Logs -->
+        <h5 style="margin:1rem 0 0.5rem 0; color:var(--color-text-main); font-size:0.95rem;">Telegram Message Dispatch Logs (SENT / FAILED):</h5>
+        <div style="max-height:160px; overflow-y:auto; border:1px solid var(--color-border); border-radius:6px;">
+          <table class="mini-table" style="margin-bottom:0;">
+            <thead>
+              <tr>
+                <th>Msg ID</th>
+                <th>Status</th>
+                <th>Content</th>
+                <th>Sent At</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${messagesRowsHtml}
+            </tbody>
+          </table>
+        </div>
       </div>
     `;
 
     const footerHtml = `<button class="btn btn-outline btn-sm" id="btn-modal-close">Close</button>`;
 
-    openModal(`Guest Dossier - ${history.customer.full_name}`, bodyHtml, footerHtml);
+    openModal(`Guest Dossier - ${c.full_name}`, bodyHtml, footerHtml);
     document.getElementById('btn-modal-close').onclick = closeModal;
+
+    // Modal Copy button
+    const modalCopyBtn = document.getElementById('btn-modal-copy-tg');
+    if (modalCopyBtn) {
+      modalCopyBtn.addEventListener('click', () => {
+        copyToClipboard(modalCopyBtn.getAttribute('data-link'));
+      });
+    }
+
+    // Submit report form
+    const reportForm = document.getElementById('form-add-customer-report');
+    if (reportForm) {
+      reportForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const note = document.getElementById('report-note').value.trim();
+        const bookingSelect = document.getElementById('report-booking-id');
+        const bookingId = bookingSelect && bookingSelect.value ? Number(bookingSelect.value) : null;
+
+        if (!note) {
+          showToast('Report note cannot be empty.', 'error');
+          return;
+        }
+
+        try {
+          await api.customerReports.create({
+            customerId: c.customer_id,
+            bookingId,
+            note
+          });
+          showToast('Customer report note logged successfully!', 'success');
+          // Re-render modal and main view
+          showCustomerDossierModal(customerId);
+          renderCustomersTable();
+        } catch (err) {
+          showToast(`Failed to add note: ${err.message}`, 'error');
+        }
+      });
+    }
+
   } catch (err) {
     showToast(`Error: ${err.message}`, 'error');
+  }
+}
+
+/**
+ * Global Table of MESSAGE Delivery Logs (SENT / FAILED)
+ */
+async function renderMessagesTable() {
+  const tbody = document.getElementById('tbody-messages');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:1.5rem;">Loading delivery logs...</td></tr>`;
+
+  try {
+    const allMessages = await api.messages.getAll();
+
+    let filtered = allMessages;
+    if (state.messagesFilter !== 'ALL') {
+      filtered = filtered.filter((m) => m.status === state.messagesFilter);
+    }
+
+    // Sort descending by message_id
+    filtered.sort((a, b) => b.message_id - a.message_id);
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--color-text-muted);">No messages found matching status ${state.messagesFilter}.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered
+      .map((m) => {
+        const statusBadge = m.status === 'SENT'
+          ? `<span class="badge badge-active">SENT</span>`
+          : `<span class="badge badge-failed">FAILED</span>`;
+
+        return `
+          <tr>
+            <td><strong>#${m.message_id}</strong></td>
+            <td>
+              <strong>${escapeHtml(m.customer_name || 'Customer')}</strong>
+              <small style="color:var(--color-text-muted); display:block;">ID: #${m.customer_id}</small>
+            </td>
+            <td>${statusBadge}</td>
+            <td style="max-width:360px;">${escapeHtml(m.content)}</td>
+            <td><small style="color:var(--color-text-muted);">${(m.sent_at || '').replace('T', ' ')}</small></td>
+          </tr>
+        `;
+      })
+      .join('');
+
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:red; padding:1.5rem;">Error loading delivery logs: ${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
@@ -1599,6 +2282,32 @@ function setupEventListeners() {
         e.target.classList.add('active');
         state.inventoryFilter = e.target.getAttribute('data-method');
         renderInventoryView();
+      }
+    });
+  }
+
+  // Add Room & Add Item Modals
+  document.getElementById('btn-add-room-modal')?.addEventListener('click', promptAddRoomModal);
+  document.getElementById('btn-add-item-modal')?.addEventListener('click', promptAddItemModal);
+
+  // Search input for Customers
+  const custSearchInput = document.getElementById('customers-search-input');
+  if (custSearchInput) {
+    custSearchInput.addEventListener('input', (e) => {
+      state.customersSearch = e.target.value.trim();
+      renderCustomersTable();
+    });
+  }
+
+  // Filter Buttons for Telegram Dispatch Messages
+  const msgFilterContainer = document.getElementById('messages-status-filters');
+  if (msgFilterContainer) {
+    msgFilterContainer.addEventListener('click', (e) => {
+      if (e.target.classList.contains('filter-pill')) {
+        msgFilterContainer.querySelectorAll('.filter-pill').forEach((p) => p.classList.remove('active'));
+        e.target.classList.add('active');
+        state.messagesFilter = e.target.getAttribute('data-status');
+        renderMessagesTable();
       }
     });
   }

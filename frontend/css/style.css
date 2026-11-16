@@ -1018,6 +1018,174 @@ table.data-table tbody tr:last-child td {
   box-shadow: var(--shadow-md);
 }
 
+/* Color-coded room cards (AVAILABLE green, BOOKED blue, CLOSED red) */
+.room-card.status-available {
+  border-left: 5px solid #10b981;
+  background: linear-gradient(to right, rgba(16, 185, 129, 0.03) 0%, var(--color-surface) 100%);
+}
+
+.room-card.status-booked {
+  border-left: 5px solid #3b82f6;
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.03) 0%, var(--color-surface) 100%);
+}
+
+.room-card.status-closed {
+  border-left: 5px solid #ef4444;
+  background: #fef2f2;
+  opacity: 0.92;
+}
+
+/* Kitchen Meal Summary Panel */
+.kitchen-summary-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.kitchen-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.kitchen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.kitchen-stat-box {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.kitchen-stat-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.kitchen-stat-box.box-ro::before { background: #64748b; }
+.kitchen-stat-box.box-bb::before { background: #10b981; }
+.kitchen-stat-box.box-hb::before { background: #3b82f6; }
+.kitchen-stat-box.box-fb::before { background: #f59e0b; }
+
+.kitchen-stat-box .meal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kitchen-stat-box .meal-name {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--color-text-main);
+  margin-top: 4px;
+}
+
+.kitchen-stat-box .meal-count {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1.1;
+  margin: 6px 0 2px 0;
+}
+
+.kitchen-stat-box small {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+/* Active Status Toggle Button for Inventory */
+.toggle-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.775rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.toggle-switch-btn.active {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
+.toggle-switch-btn.active:hover {
+  background: #d1fae5;
+}
+
+.toggle-switch-btn.inactive {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+
+.toggle-switch-btn.inactive:hover {
+  background: #e5e7eb;
+}
+
+.toggle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.toggle-dot.active {
+  background: #10b981;
+}
+
+.toggle-dot.inactive {
+  background: #9ca3af;
+}
+
+/* One-Click Copy Telegram Link Button */
+.btn-copy-telegram {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  font-size: 0.775rem;
+  border-radius: var(--radius-sm);
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-copy-telegram:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.btn-copy-telegram:active {
+  transform: scale(0.97);
+}
+
 .room-card-header {
   display: flex;
   align-items: center;

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>API & Mock DB Verification</title>
+</head>
+<body>
+  <h1>Mock API Verification</h1>
+  <div id="output">Running tests...</div>
+
+  <script type="module">
+    import { MockAPI } from './js/api/mock-api.js';
+    import { api, USE_MOCK } from './js/api/api.js';
+
+    const results = [];
+    function assert(desc, condition) {
+      if (condition) {
+        results.push(`PASS: ${desc}`);
+      } else {
+        results.push(`FAIL: ${desc}`);
+        console.error(`FAIL: ${desc}`);
+      }
+    }
+
+    async function runVerification() {
+      try {
+        console.log('--- STARTING VERIFICATION ---');
+        assert('USE_MOCK is true', USE_MOCK === true);
+
+        // Reset database to ensure clean state
+        await api.system.resetDatabase();
+        const db = MockAPI.getDatabase();
+
+        // 1. Check all 12 tables exist
+        const requiredTables = [
+          'shop_owner', 'meal_plan', 'room', 'customer', 'booking_request',
+          'booking', 'booking_room', 'item', 'item_order', 'payment', 'message', 'customer_report'
+        ];
+        requiredTables.forEach(tbl => {
+          assert(`Table ${tbl} exists in mock database`, Array.isArray(db[tbl]) && db[tbl].length > 0);
+        });
+
+        // 2. Exact column name verification on shop_owner
+        const owner = db.shop_owner[0];
+        ['owner_id', 'username', 'password_hash', 'salt', 'full_name', 'created_at', 'last_login_at'].forEach(col => {
+          assert(`shop_owner has column ${col}`, col in owner);
+        });
+
+        // 3. Exact column name verification on item (COUNT & CONTINUOUS)
+        const countItem = db.item.find(i => i.measuring_method === 'COUNT');
+        const contItem = db.item.find(i => i.measuring_method === 'CONTINUOUS');
+        assert('COUNT measuring method item exists', !!countItem);
+        assert('CONTINUOUS measuring method item exists', !!contItem);
+        ['item_id', 'name', 'price_per_unit', 'stock_amount', 'measuring_method', 'is_active'].forEach(col => {
+          assert(`item has column ${col}`, col in countItem && col in contItem);
+        });
+
+        // 4. Exact column name verification on room
+        const room = db.room[0];
+        ['room_id', 'room_number', 'room_type', 'price_per_night', 'status'].forEach(col => {
+          assert(`room has column ${col}`, col in room);
+        });
+
+        // 5. Exact column name verification on meal_plan
+        const meal = db.meal_plan[0];
+        ['meal_plan_id', 'code', 'name', 'description', 'is_active'].forEach(col => {
+          assert(`meal_plan has column ${col}`, col in meal);
+        });
+
+        // 6. Exact column name verification on customer
+        const customer = db.customer[0];
+        ['customer_id', 'full_name', 'phone', 'telegram_chat_id', 'times_denied', 'last_denied_date', 'created_at'].forEach(col => {
+          assert(`customer has column ${col}`, col in customer);
+        });
+
+        // 7. Exact column name verification on booking_request
+        const reqWithSpecial = db.booking_request.find(r => r.special_request && r.special_request.length > 0);
+        assert('booking_request with special_request exists', !!reqWithSpecial);
+        ['request_id', 'customer_id', 'email_message_id', 'booking_ref', 'guest_name', 'guest_phone',
+         'meal_plan_id', 'special_request', 'check_in', 'check_out', 'rooms_wanted', 'total_price',
+         'status', 'received_at', 'decided_by', 'decided_at'].forEach(col => {
+          assert(`booking_request has column ${col}`, col in reqWithSpecial);
+        });
+
+        // 8. Exact column name verification on booking
+        const booking = db.booking[0];
+        ['booking_id', 'request_id', 'customer_id', 'check_in', 'check_out', 'status', 'created_at'].forEach(col => {
+          assert(`booking has column ${col}`, col in booking);
+        });
+
+        // 9. Exact column name verification on booking_room
+        const bRoom = db.booking_room[0];
+        ['booking_id', 'room_id', 'price_per_night'].forEach(col => {
+          assert(`booking_room has column ${col}`, col in bRoom);
+        });
+
+        // 10. Exact column name verification on item_order
+        const order = db.item_order[0];
+        ['order_id', 'booking_id', 'item_id', 'amount', 'unit_price', 'ordered_at'].forEach(col => {
+          assert(`item_order has column ${col}`, col in order);
+        });
+
+        // 11. Exact column name verification on payment
+        const payment = db.payment[0];
+        ['payment_id', 'booking_id', 'amount', 'method', 'paid_at'].forEach(col => {
+          assert(`payment has column ${col}`, col in payment);
+        });
+
+        // 12. Exact column name verification on message
+        const message = db.message[0];
+        ['message_id', 'customer_id', 'content', 'status', 'sent_at'].forEach(col => {
+          assert(`message has column ${col}`, col in message);
+        });
+
+        // 13. Exact column name verification on customer_report
+        const report = db.customer_report[0];
+        ['report_id', 'customer_id', 'booking_id', 'note', 'created_at'].forEach(col => {
+          assert(`customer_report has column ${col}`, col in report);
+        });
+
+        // 14. Test api.rooms CRUD
+        const newRoom = await api.rooms.create({
+          room_number: '999',
+          room_type: 'VIP Panoramic Penthouse',
+          price_per_night: 450.00
+        });
+        assert('api.rooms.create succeeded', newRoom.room_number === '999');
+
+        const fetchedRoom = await api.rooms.getById(newRoom.room_id);
+        assert('api.rooms.getById succeeded', fetchedRoom.price_per_night === 450.00);
+
+        const updatedRoom = await api.rooms.update(newRoom.room_id, { price_per_night: 480.00 });
+        assert('api.rooms.update succeeded', updatedRoom.price_per_night === 480.00);
+
+        await api.rooms.delete(newRoom.room_id);
+        const deletedRoom = await api.rooms.getById(newRoom.room_id);
+        assert('api.rooms.delete succeeded', deletedRoom === null);
+
+        // 15. Test Booking Request Workflow (Accept)
+        const pendingReq = (await api.bookingRequests.getAll({ status: 'PENDING' }))[0];
+        assert('Found a PENDING booking request', !!pendingReq);
+
+        const acceptResult = await api.bookingRequests.accept(pendingReq.request_id, {
+          roomIds: [1],
+          decidedBy: 1
+        });
+        assert('Accept request creates a booking', !!acceptResult.booking);
+        assert('Accept request sets status ACCEPTED', acceptResult.request.status === 'ACCEPTED');
+
+        const room1 = await api.rooms.getById(1);
+        assert('Assigned room is now BOOKED', room1.status === 'BOOKED');
+
+        // 16. Test Continuous Item ordering
+        const contOrder = await api.itemOrders.create({
+          bookingId: acceptResult.booking.booking_id,
+          itemId: contItem.item_id,
+          amount: 2.25
+        });
+        assert('Continuous item ordered with decimal amount (2.25)', contOrder.amount === 2.25);
+
+        // 17. Test Payment creation
+        const newPayment = await api.payments.create({
+          bookingId: acceptResult.booking.booking_id,
+          amount: 150.00,
+          method: 'CARD'
+        });
+        assert('Payment created with method CARD', newPayment.method === 'CARD' && newPayment.amount === 150);
+
+        // 18. Test Booking Billing calculation
+        const bill = await api.bookings.getBilling(acceptResult.booking.booking_id);
+        assert('Billing room charges calculated', bill.room_charges > 0);
+        assert('Billing order charges calculated', bill.order_charges > 0);
+        assert('Billing total paid recorded', bill.total_paid === 150);
+
+        // 19. Test Checkout workflow frees rooms
+        await api.bookings.checkOut(acceptResult.booking.booking_id);
+        const room1AfterCheckout = await api.rooms.getById(1);
+        assert('Checkout releases room back to AVAILABLE', room1AfterCheckout.status === 'AVAILABLE');
+
+        // 20. Test Dashboard Summary
+        const summary = await api.dashboard.getSummary();
+        assert('Dashboard summary returns room stats', summary.rooms && summary.rooms.total > 0);
+        assert('Dashboard summary returns revenue', typeof summary.total_revenue === 'number');
+
+        console.log('--- ALL TESTS COMPLETED ---');
+        console.log(`TOTAL CHECKS: ${results.length}, FAILURES: ${results.filter(r => r.startsWith('FAIL')).length}`);
+
+        document.getElementById('output').innerHTML = `
+          <h2>Test Results (${results.filter(r => r.startsWith('PASS')).length}/${results.length} Passed)</h2>
+          <pre>${results.join('\n')}</pre>
+        `;
+      } catch (e) {
+        console.error('Test exception:', e);
+        document.getElementById('output').innerHTML = `<h2 style="color:red">Test Threw Exception: ${e.message}</h2><pre>${e.stack}</pre>`;
+      }
+    }
+
+    runVerification();
+  </script>
+</body>
+</html>
+

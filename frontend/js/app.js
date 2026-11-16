@@ -458,9 +458,9 @@ async function promptAcceptRequest(requestId) {
       ? availableRooms
           .map(
             (r) => `
-            <label class="room-checkbox-label" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border:1px solid var(--color-border); border-radius:6px; margin-bottom:6px; cursor:pointer; background:#fff;">
+            <label class="room-checkbox-label" for="assign-room-${r.room_id}" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border:1px solid var(--color-border); border-radius:6px; margin-bottom:6px; cursor:pointer; background:#fff;">
               <div style="display:flex; align-items:center; gap:10px;">
-                <input type="checkbox" name="assigned_room" value="${r.room_id}" class="room-assign-cb">
+                <input type="checkbox" id="assign-room-${r.room_id}" name="assigned_room" value="${r.room_id}" class="room-assign-cb">
                 <div>
                   <strong>Room ${escapeHtml(r.room_number)}</strong> — ${escapeHtml(r.room_type)}
                 </div>
@@ -510,9 +510,9 @@ async function promptAcceptRequest(requestId) {
 
       <div class="form-group">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-          <label class="form-label" style="margin-bottom:0;">
+          <span class="form-label" style="margin-bottom:0;">
             Select <strong>exactly ${req.rooms_wanted}</strong> room(s) (where status === AVAILABLE):
-          </label>
+          </span>
           <span id="room-selection-counter" class="room-select-counter invalid">0 of ${req.rooms_wanted} selected</span>
         </div>
         <div style="max-height:220px; overflow-y:auto; border:1px solid var(--color-border); padding:6px; border-radius:6px; background:var(--color-surface-alt);">
@@ -593,6 +593,7 @@ async function promptDenyRequest(requestId) {
         <option value="Guest requested cancellation">Guest requested cancellation</option>
         <option value="Custom">Other reason (specify below)...</option>
       </select>
+      <label class="form-label" for="deny-reason-custom" id="deny-reason-custom-label" style="display:none; margin-top:6px;">Custom Reason Notes:</label>
       <input type="text" id="deny-reason-custom" class="form-control" placeholder="Specify denial notes..." style="display:none;">
     </div>
   `;
@@ -606,8 +607,11 @@ async function promptDenyRequest(requestId) {
 
   const sel = document.getElementById('deny-reason-select');
   const customInput = document.getElementById('deny-reason-custom');
+  const customLabel = document.getElementById('deny-reason-custom-label');
   sel.onchange = () => {
-    customInput.style.display = sel.value === 'Custom' ? 'block' : 'none';
+    const isCustom = sel.value === 'Custom';
+    customInput.style.display = isCustom ? 'block' : 'none';
+    if (customLabel) customLabel.style.display = isCustom ? 'block' : 'none';
   };
 
   document.getElementById('btn-modal-cancel').onclick = closeModal;
@@ -1234,7 +1238,7 @@ async function promptAddOrder(bookingId) {
 
   const bodyHtml = `
     <div class="form-group">
-      <label class="form-label">Select Supply / Order Item:</label>
+      <label class="form-label" for="order-item-id">Select Supply / Order Item:</label>
       <select id="order-item-id" class="form-control">
         ${itemOptionsHtml}
       </select>
@@ -1475,6 +1479,7 @@ async function promptAddRoomModal() {
           <option value="Executive Penthouse Suite">Executive Penthouse Suite</option>
           <option value="Custom">Other (Custom category)...</option>
         </select>
+        <label class="form-label" for="add-room-type-custom" id="add-room-type-custom-label" style="display:none; margin-top:6px;">Custom Category Name:</label>
         <input type="text" id="add-room-type-custom" class="form-control" placeholder="Enter custom room type..." style="display:none; margin-top:6px;">
       </div>
 
@@ -1494,8 +1499,11 @@ async function promptAddRoomModal() {
 
   const typeSelect = document.getElementById('add-room-type');
   const typeCustom = document.getElementById('add-room-type-custom');
+  const typeCustomLabel = document.getElementById('add-room-type-custom-label');
   typeSelect.addEventListener('change', () => {
-    typeCustom.style.display = typeSelect.value === 'Custom' ? 'block' : 'none';
+    const isCustom = typeSelect.value === 'Custom';
+    typeCustom.style.display = isCustom ? 'block' : 'none';
+    if (typeCustomLabel) typeCustomLabel.style.display = isCustom ? 'block' : 'none';
   });
 
   document.getElementById('btn-modal-cancel').onclick = closeModal;

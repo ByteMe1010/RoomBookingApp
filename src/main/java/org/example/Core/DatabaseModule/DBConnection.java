@@ -36,7 +36,7 @@ public class DBConnection {
 
     private DBConnection(){
         try {
-            connection = DriverManager.getConnection(databaseURL,databaseUsername,databasePassword);
+            connection = DriverManager.getConnection(dbUrl,dbUser,dbPassword);
         } catch (SQLException e) {
             System.out.println("Connection Failed! Check does database URL,Username and password settted up correctly in DBConnection.java file\n and check does database is active in given port, also try adding trustServerCertificate=true to database URL properties list(Ask a AI how to)");
             throw new RuntimeException(e);

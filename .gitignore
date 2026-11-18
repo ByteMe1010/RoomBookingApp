@@ -53,3 +53,14 @@ tokens/
 .vs/
 hs_err_pid*.log
 replay_pid*.log
+
+# OAuth library stores and machine-specific configuration
+StoredCredential
+oauth-client*.json
+oauth_client*.json
+*client_secret*.json
+token-store/
+*.local.properties
+*.local.json
+*.local.yaml
+*.local.yml

@@ -21,10 +21,10 @@
             <version>12.6.1.jre11</version>
         </dependency>
         <dependency>
-    <groupId>com.google.apis</groupId>
-    <artifactId>google-api-services-gmail</artifactId>
-    <version>v1-rev20261005-2.9.2</version>
-</dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-gmail</artifactId>
+            <version>v1-rev20261005-2.9.2</version>
+        </dependency>
         <dependency><groupId>com.google.oauth-client</groupId><artifactId>google-oauth-client-jetty</artifactId><version>1.36.0</version></dependency>
         <dependency><groupId>com.google.http-client</groupId><artifactId>google-http-client-gson</artifactId><version>2.0.0</version></dependency>
         <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>5.11.4</version><scope>test</scope></dependency>

@@ -1,0 +1,8 @@
+Booking.com notification: You have a new reservation
+Reservation number: 9876543210
+Guest name: Synthetic &amp; Example
+Check-in: 18 November 2026
+Check-out: 21 Nov 2026
+Room type: Deluxe Double
+Number of rooms: 2
+Guest phone: +00 000 0000

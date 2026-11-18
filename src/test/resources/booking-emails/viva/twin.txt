@@ -1,0 +1,11 @@
+SYNTHETIC UNIVERSITY DEMONSTRATION
+Booking number
+VIVA-SYN-003
+Guest
+Lena Exampleton
+Check in
+2027-01-13
+Check out
+16/01/2027
+Room
+Courtyard Twin

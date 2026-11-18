@@ -1,0 +1,6 @@
+SYNTHETIC UNIVERSITY DEMONSTRATION
+Booking modification
+Reservation number: VIVA-SYN-001
+Guest name: Mira Testwell
+Check-in: 22 November 2026
+Check-out: 26 Nov 2026

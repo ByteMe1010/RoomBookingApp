@@ -1,0 +1,9 @@
+SYNTHETIC UNIVERSITY DEMONSTRATION - NOT A REAL BOOKING
+A new reservation is ready for review at the fictional Lantern Bay Hotel.
+Reservation number: VIVA-SYN-001
+Guest name: Mira Testwell
+Check-in: 22 November 2026
+Check-out: 25 Nov 2026
+Room type: Garden Double
+Number of rooms: 2
+Guest phone: +00 000 0101

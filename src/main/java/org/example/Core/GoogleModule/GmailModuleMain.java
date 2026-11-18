@@ -1,6 +1,9 @@
 package org.example.Core.GoogleModule;
 
+import org.example.Core.DatabaseModule.JdbcConnections;
+
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -8,6 +11,7 @@ import java.util.logging.Logger;
 import java.util.function.Supplier;
 
 public final class GmailModuleMain {
+    static final String CONTROLLED_REFERENCE = GmailDemoPolicy.REFERENCE;
     private static final Logger LOG = Logger.getLogger(GmailModuleMain.class.getName());
     // Third-party exception messages may contain HTTP bodies, credentials, or emails.
     // Preserve stack frames and exception types without passing those messages to the logger.
@@ -25,15 +29,23 @@ public final class GmailModuleMain {
     static GmailPollingService.BookingSink selectSink(boolean testMode, Supplier<GmailPollingService.BookingSink> databaseSink) {
         return testMode ? new SimulatedBookingSink() : databaseSink.get();
     }
+    static String controlledReference(boolean testMode, String writeOptIn, String reference) {
+        if (testMode) return null;
+        return GmailDemoPolicy.requireReference(writeOptIn, reference);
+    }
     public static void main(String[] args) {
         int minutes = Integer.parseInt(System.getenv().getOrDefault("GMAIL_POLL_MINUTES", "2"));
         if (minutes < 1 || minutes > 5) throw new IllegalArgumentException("GMAIL_POLL_MINUTES must be 1 to 5");
         Path client = Path.of(env("GMAIL_CLIENT_JSON")); Path tokens = Path.of(env("GMAIL_TOKEN_DIR"));
         String sender = env("GMAIL_BOOKING_SENDER");
+        Instant cutoff = Instant.parse(env("GMAIL_INITIAL_CUTOFF"));
         boolean testMode = "true".equalsIgnoreCase(System.getenv().getOrDefault("GMAIL_TEST_MODE", "false"));
+        String reference = controlledReference(testMode, System.getenv("GMAIL_ALLOW_TEST_DB_WRITES"), System.getenv("GMAIL_RESERVATION_REFERENCE"));
         if (testMode) LOG.info("Gmail test mode enabled; database is disabled.");
         GmailPollingService.BookingSink sink = selectSink(testMode, () -> {
-            var repository = new BookingRequestRepository(env("BOOKING_JDBC_URL"), env("BOOKING_DB_USER"), env("BOOKING_DB_PASSWORD"));
+            String url = env("BOOKING_JDBC_URL");
+            boolean integrated = JdbcConnections.usesIntegratedSecurity(url);
+            var repository = new BookingRequestRepository(url, integrated ? null : env("BOOKING_DB_USER"), integrated ? null : env("BOOKING_DB_PASSWORD"), true);
             return repository::saveIfNew;
         });
         var scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -43,11 +55,13 @@ public final class GmailModuleMain {
             private GmailPollingService service;
             public void run() {
                 try {
-                    if (service == null) service = new GmailPollingService(new GmailAuthentication().connect(client, tokens), sink, sender, testMode);
+                    if (service == null) service = new GmailPollingService(new GmailAuthentication().connect(client, tokens), sink, sender, testMode, cutoff, reference);
                     service.poll();
                 } catch (Exception ex) {
                     LOG.log(Level.WARNING, "Gmail polling or authentication failed; retrying on the next poll.", safeDiagnostic(ex));
-                    for (Throwable cause = ex.getCause(); cause != null && cause != ex; cause = cause.getCause()) {
+                    var seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<Throwable, Boolean>());
+                    seen.add(ex);
+                    for (Throwable cause = ex.getCause(); cause != null && seen.add(cause); cause = cause.getCause()) {
                         LOG.log(Level.WARNING, "Underlying cause:", safeDiagnostic(cause));
                     }
                 }

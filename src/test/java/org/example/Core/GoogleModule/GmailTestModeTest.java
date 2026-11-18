@@ -15,13 +15,44 @@ import java.util.logging.Logger;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GmailTestModeTest {
+    @Test void databaseModeRequiresOptInAndExactReference() {
+        String ref = GmailModuleMain.CONTROLLED_REFERENCE;
+        assertNull(GmailModuleMain.controlledReference(true, null, null));
+        assertThrows(IllegalArgumentException.class, () -> GmailModuleMain.controlledReference(false, null, ref));
+        assertThrows(IllegalArgumentException.class, () -> GmailModuleMain.controlledReference(false, "true", "other"));
+        assertThrows(IllegalArgumentException.class, () -> GmailModuleMain.controlledReference(false, "true", "BK-TEST-20261118-001"));
+        assertEquals(ref, GmailModuleMain.controlledReference(false, "true", ref));
+    }
+    @Test void referenceFilterOnlyPassesExactMatch() throws Exception {
+        var calls = new java.util.concurrent.atomic.AtomicInteger();
+        var service = new GmailPollingService(null, (id, booking) -> calls.incrementAndGet(), "test@example.com", false,
+                java.time.Instant.EPOCH, GmailModuleMain.CONTROLLED_REFERENCE);
+        String body = "Reservation ID: VIVA-SYN-002\nGuest name: Synthetic Test\nCheck-in: 2027-01-01\nCheck-out: 2027-01-03";
+        assertFalse(service.processMessage(message(body.replace("VIVA-SYN-002", "OTHER"))));
+        assertTrue(service.processMessage(message(body)));
+        assertEquals(1, calls.get());
+    }
     @Test void testModeNeverInitializesOrCallsDatabaseSink() throws Exception {
         var sink = GmailModuleMain.selectSink(true, () -> { throw new AssertionError("Database accessed"); });
         sink.accept("test", SimulatedBookingSink.FIXTURE);
     }
+    @Test void controlledModeRejectsWrongSenderAndBothKindsOfDuplicate() throws Exception {
+        var calls = new java.util.concurrent.atomic.AtomicInteger();
+        var service = new GmailPollingService(null, (id, booking) -> calls.incrementAndGet(), "test@example.com", false,
+                java.time.Instant.EPOCH, GmailModuleMain.CONTROLLED_REFERENCE);
+        String body = "Reservation ID: VIVA-SYN-002\nGuest name: Synthetic Test\nCheck-in: 2027-01-01\nCheck-out: 2027-01-03";
+        var wrongSender = message(body);
+        wrongSender.getPayload().getHeaders().get(1).setValue("other@example.com");
+        assertFalse(service.processMessage(wrongSender));
+        assertTrue(service.processMessage(message(body)));
+        assertFalse(service.processMessage(message(body)));
+        assertFalse(service.processMessage(message(body).setId("second-message")));
+        assertEquals(1, calls.get());
+    }
     private Message message(String body) {
-        return new Message().setId("dummy-message").setPayload(new MessagePart().setMimeType("text/plain")
-                .setHeaders(List.of(new MessagePartHeader().setName("Subject").setValue("New reservation")))
+        return new Message().setId("dummy-message").setInternalDate(1000L).setPayload(new MessagePart().setMimeType("text/plain")
+                .setHeaders(List.of(new MessagePartHeader().setName("Subject").setValue("New reservation"),
+                        new MessagePartHeader().setName("From").setValue("test@example.com")))
                 .setBody(new MessagePartBody().setData(Base64.getUrlEncoder().encodeToString(body.getBytes(StandardCharsets.UTF_8)))));
     }
     @Test void parsesGmailMessageWithoutDatabaseAndSuppressesOtherGuestData() throws Exception {
@@ -35,7 +66,7 @@ class GmailTestModeTest {
         };
         logger.addHandler(handler);
         try {
-            var service = new GmailPollingService(null, new SimulatedBookingSink(), "test@example.com", true);
+            var service = new GmailPollingService(null, new SimulatedBookingSink(), "test@example.com", true, java.time.Instant.EPOCH);
             service.processMessage(message(fixture));
             assertNotNull(output.get());
             assertTrue(output.get().contains("Simulated reservation parsed"));

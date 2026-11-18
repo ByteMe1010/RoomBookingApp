@@ -1,0 +1,7 @@
+SYNTHETIC UNIVERSITY DEMONSTRATION
+Reservation number: VIVA-SYN-002
+Guest name: Arun Demo & Family
+Arrival date: 28 November 2026
+Departure date: 2026-12-02
+Room type: Family Suite
+Room quantity: 1

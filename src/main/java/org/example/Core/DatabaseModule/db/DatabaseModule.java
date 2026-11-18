@@ -70,6 +70,13 @@ public interface DatabaseModule {
     BookingRequest getBookingRequestById(int requestId) throws SQLException;
     List<BookingRequest> getAllBookingRequests() throws SQLException;
     List<BookingRequest> getPendingBookingRequests() throws SQLException;
+
+    BookingRequest getBookingRequestByEmailMessageId(String emailMessageId) throws SQLException;
+
+    BookingRequest getBookingRequestByBookingRef(String bookingRef) throws SQLException;
+
+    List<BookingRequest> getBookingRequests(String status, String... searchQ) throws SQLException;
+
     void updateBookingRequest(BookingRequest request) throws SQLException;
     void updateBookingRequestStatus(int requestId, String status, int decidedBy) throws SQLException;
     void deleteBookingRequest(int requestId) throws SQLException;
@@ -97,6 +104,8 @@ public interface DatabaseModule {
     // 9. ITEM ORDER OPERATIONS (CRUD)
     // ==========================================
     int addOrderToBooking(ItemOrder order) throws SQLException;
+    int purchaseItemOrder(ItemOrder order) throws SQLException;
+    boolean cancelItemOrderAndRestock(int orderId) throws SQLException;
     ItemOrder getOrderById(int orderId) throws SQLException;
     List<ItemOrder> getOrdersForBooking(int bookingId) throws SQLException;
     void updateItemOrder(ItemOrder order) throws SQLException;

@@ -1,0 +1,84 @@
+/* ========================================
+   Base Theme for NNGF2
+   Default dark/light look & feel.
+   Overrides nngf-base.css color vars.
+   Load AFTER nngf-base.css.
+   ======================================== */
+
+:root {
+  /* ---- Dark mode palette ---- */
+  --nngf-bg: #1c1c1e;
+  --nngf-bg-secondary: #2c2c2e;
+  --nngf-bg-tertiary: #3a3a3c;
+  --nngf-text: #f5f5f7;
+  --nngf-text-secondary: #a1a1a6;
+  --nngf-text-tertiary: #6e6e73;
+  --nngf-border: #3a3a3c;
+  --nngf-border-hover: #5a5a5e;
+  --nngf-border-focus: #0a84ff;
+  --nngf-primary: #0a84ff;
+  --nngf-primary-text: #ffffff;
+  --nngf-radius: 8px;
+  --nngf-radius-sm: 6px;
+  --nngf-radius-lg: 12px;
+  --nngf-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --nngf-shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --nngf-transition: 200ms ease;
+  --nngf-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --nngf-gap: 8px;
+  --nngf-gap-lg: 16px;
+}
+
+[data-theme="light"] {
+  /* ---- Light mode palette ---- */
+  --nngf-bg: #ffffff;
+  --nngf-bg-secondary: #f5f5f7;
+  --nngf-bg-tertiary: #e8e8ed;
+  --nngf-text: #1d1d1f;
+  --nngf-text-secondary: #6e6e73;
+  --nngf-text-tertiary: #86868b;
+  --nngf-border: #d2d2d7;
+  --nngf-border-hover: #a1a1a6;
+  --nngf-border-focus: #0071e3;
+  --nngf-primary: #0071e3;
+  --nngf-primary-text: #ffffff;
+  --nngf-radius: 8px;
+  --nngf-radius-sm: 6px;
+  --nngf-radius-lg: 12px;
+  --nngf-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --nngf-shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --nngf-transition: 200ms ease;
+  --nngf-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --nngf-gap: 8px;
+  --nngf-gap-lg: 16px;
+}
+
+/* ---- Page background / text defaults ---- */
+html, body {
+  background: var(--nngf-bg-secondary);
+  color: var(--nngf-text);
+  font-family: var(--nngf-font);
+}
+
+/* ---- Scrollbar ---- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--nngf-border-hover) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--nngf-border-hover);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--nngf-text-tertiary);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}

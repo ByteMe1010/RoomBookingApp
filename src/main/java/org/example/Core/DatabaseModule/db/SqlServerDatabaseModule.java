@@ -698,6 +698,47 @@ public class SqlServerDatabaseModule implements DatabaseModule {
     }
 
     @Override
+    public BookingRequest getBookingRequestByEmailMessageId(String emailMessageId) throws SQLException {
+        String sql = "SELECT request_id, customer_id, email_message_id, booking_ref, guest_name, guest_phone, check_in, check_out, rooms_wanted, meal_plan_id, total_price, special_request, status, received_at, decided_by, decided_at FROM BOOKING_REQUEST WHERE email_message_id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, emailMessageId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapBookingRequest(rs);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public BookingRequest getBookingRequestByBookingRef(String bookingRef) throws SQLException {
+        String sql = "SELECT request_id, customer_id, email_message_id, booking_ref, guest_name, guest_phone, check_in, check_out, rooms_wanted, meal_plan_id, total_price, special_request, status, received_at, decided_by, decided_at FROM BOOKING_REQUEST WHERE booking_ref = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, bookingRef);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapBookingRequest(rs);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<BookingRequest> getBookingRequests(String status, String... searchQ) throws SQLException {
+        List<BookingRequest> requests = new ArrayList<>();
+        String sql = "SELECT request_id, customer_id, email_message_id, booking_ref, guest_name, guest_phone, check_in, check_out, rooms_wanted, meal_plan_id, total_price, special_request, status, received_at, decided_by, decided_at FROM BOOKING_REQUEST WHERE status = ? "+((searchQ.length>0) ? "AND guest_name LIKE ?":"");
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql);) {
+            ps.setString(1,status);
+            if(searchQ.length>0) ps.setString(2,searchQ[0]);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                requests.add(mapBookingRequest(rs));
+            }
+        }
+        return requests;
+    }
+
+    @Override
     public void updateBookingRequest(BookingRequest request) throws SQLException {
         String sql = "UPDATE BOOKING_REQUEST SET customer_id = ?, booking_ref = ?, guest_name = ?, guest_phone = ?, check_in = ?, check_out = ?, rooms_wanted = ?, meal_plan_id = ?, total_price = ?, special_request = ?, status = ? WHERE request_id = ?";
         try (Connection conn = getConnection();
@@ -1353,5 +1394,119 @@ public class SqlServerDatabaseModule implements DatabaseModule {
                 rs.getString("note"),
                 (cAt != null) ? cAt.toLocalDateTime() : null
         );
+    }
+
+    @Override
+    public int purchaseItemOrder(ItemOrder order) throws SQLException {
+        Connection conn = getConnection();
+        try {
+            conn.setAutoCommit(false);
+
+            String itemSql = "SELECT stock_amount, is_active FROM ITEM WITH (UPDLOCK, HOLDLOCK) WHERE item_id = ?";
+            double stock;
+            boolean active;
+            try (PreparedStatement itemPs = conn.prepareStatement(itemSql)) {
+                itemPs.setInt(1, order.getItemId());
+                try (ResultSet rs = itemPs.executeQuery()) {
+                    if (!rs.next()) throw new SQLException("Item was not found.");
+                    stock = rs.getDouble("stock_amount");
+                    active = rs.getBoolean("is_active");
+                }
+            }
+
+            if (!active) throw new SQLException("Archived items cannot be ordered.");
+            if (order.getAmount() <= 0) throw new SQLException("Order amount must be greater than zero.");
+            if (order.getAmount() > stock) throw new SQLException("Insufficient stock. Available: " + stock);
+
+            String insertSql = "INSERT INTO ITEM_ORDER (booking_id, item_id, amount, unit_price) VALUES (?, ?, ?, ?)";
+            int orderId = -1;
+            try (PreparedStatement insertPs = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
+                insertPs.setInt(1, order.getBookingId());
+                insertPs.setInt(2, order.getItemId());
+                insertPs.setDouble(3, order.getAmount());
+                insertPs.setDouble(4, order.getUnitPrice());
+                insertPs.executeUpdate();
+                try (ResultSet keys = insertPs.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        orderId = keys.getInt(1);
+                        order.setOrderId(orderId);
+                    }
+                }
+            }
+
+            if (orderId <= 0) throw new SQLException("Failed to record item order.");
+
+            try (PreparedStatement stockPs = conn.prepareStatement("UPDATE ITEM SET stock_amount = stock_amount - ? WHERE item_id = ?")) {
+                stockPs.setDouble(1, order.getAmount());
+                stockPs.setInt(2, order.getItemId());
+                stockPs.executeUpdate();
+            }
+
+            conn.commit();
+            return orderId;
+        } catch (SQLException exception) {
+            try {
+                conn.rollback();
+            } catch (SQLException rollbackException) {
+                exception.addSuppressed(rollbackException);
+            }
+            throw exception;
+        } finally {
+            try {
+                conn.close();
+            } catch (SQLException exception) {
+                // Connection cleanup failure should not mask the database operation result.
+            }
+        }
+    }
+
+    @Override
+    public boolean cancelItemOrderAndRestock(int orderId) throws SQLException {
+        Connection conn = getConnection();
+        try {
+            conn.setAutoCommit(false);
+
+            int itemId;
+            double amount;
+            try (PreparedStatement selectPs = conn.prepareStatement(
+                    "SELECT item_id, amount FROM ITEM_ORDER WITH (UPDLOCK, HOLDLOCK) WHERE order_id = ?")) {
+                selectPs.setInt(1, orderId);
+                try (ResultSet rs = selectPs.executeQuery()) {
+                    if (!rs.next()) {
+                        conn.rollback();
+                        return false;
+                    }
+                    itemId = rs.getInt("item_id");
+                    amount = rs.getDouble("amount");
+                }
+            }
+
+            try (PreparedStatement deletePs = conn.prepareStatement("DELETE FROM ITEM_ORDER WHERE order_id = ?")) {
+                deletePs.setInt(1, orderId);
+                deletePs.executeUpdate();
+            }
+
+            try (PreparedStatement stockPs = conn.prepareStatement("UPDATE ITEM SET stock_amount = stock_amount + ? WHERE item_id = ?")) {
+                stockPs.setDouble(1, amount);
+                stockPs.setInt(2, itemId);
+                stockPs.executeUpdate();
+            }
+
+            conn.commit();
+            return true;
+        } catch (SQLException exception) {
+            try {
+                conn.rollback();
+            } catch (SQLException rollbackException) {
+                exception.addSuppressed(rollbackException);
+            }
+            throw exception;
+        } finally {
+            try {
+                conn.close();
+            } catch (SQLException exception) {
+                // Connection cleanup failure should not mask the database operation result.
+            }
+        }
     }
 }

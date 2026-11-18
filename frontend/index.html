@@ -206,6 +206,18 @@
               <p>Inbound Booking.com reservation requests awaiting review and room assignment</p>
             </div>
             <div class="header-actions">
+              <button id="btn-gmail-check" class="btn btn-outline btn-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                </svg>
+                <span>Check Gmail</span>
+              </button>
+              <button id="btn-gmail-simulate" class="btn btn-outline btn-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+                <span>Simulate</span>
+              </button>
               <button id="btn-refresh-requests" class="btn btn-outline btn-sm">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
@@ -423,9 +435,9 @@
           <!-- Inventory Filter Bar -->
           <div class="filter-bar">
             <div class="filter-pills" id="inventory-method-filters">
-              <button class="filter-pill active" data-method="ALL">All Items</button>
-              <button class="filter-pill" data-method="COUNT">COUNT (Units / Pieces)</button>
-              <button class="filter-pill" data-method="CONTINUOUS">CONTINUOUS (kg / Liters)</button>
+              <button id="inventory-filter-all" class="filter-pill active" data-method="ALL">All Items</button>
+              <button id="inventory-filter-count" class="filter-pill" data-method="COUNT">COUNT (Units / Pieces)</button>
+              <button id="inventory-filter-continuous" class="filter-pill" data-method="CONTINUOUS">CONTINUOUS (kg / Liters)</button>
             </div>
           </div>
 

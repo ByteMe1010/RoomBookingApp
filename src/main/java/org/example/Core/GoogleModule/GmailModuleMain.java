@@ -33,8 +33,10 @@ public final class GmailModuleMain {
         boolean testMode = "true".equalsIgnoreCase(System.getenv().getOrDefault("GMAIL_TEST_MODE", "false"));
         if (testMode) LOG.info("Gmail test mode enabled; database is disabled.");
         GmailPollingService.BookingSink sink = selectSink(testMode, () -> {
-            var repository = new BookingRequestRepository(env("BOOKING_JDBC_URL"), env("BOOKING_DB_USER"), env("BOOKING_DB_PASSWORD"));
-            return repository::saveIfNew;
+            var dbModule = new org.example.Core.DatabaseModule.db.SqlServerDatabaseModule(
+                    "jdbc:sqlserver://localhost:1433;databaseName=HOTEL_DB;user=java_dev;password=123456789;encrypt=true;trustServerCertificate=true;",
+                    "java_dev", "123456789");
+            return new DatabaseBookingSink(dbModule);
         });
         var scheduler = Executors.newSingleThreadScheduledExecutor();
         Runtime.getRuntime().addShutdownHook(new Thread(scheduler::shutdownNow));

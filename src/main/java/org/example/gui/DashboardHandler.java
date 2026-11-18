@@ -63,12 +63,14 @@ public class DashboardHandler {
             helper_removeClass("active",bookingPanel,staysPanel,roomPanel,inventoryPanel,customerPanel,bookingBtn,staysBtn,roomsBtn,inventoryBtn,customerBtn);
             customerPanel.classList.add("active");
             customerBtn.classList.add("active");
+            TelegramHandler.updateCustomersTable(window);
         });
 
         BookingRequestHandler.handle(window);
         StayHandler.handle(window);
         RoomHandler.handle(window);
         InventoryHandler.handle(window);
+        TelegramHandler.handle(window);
     }
     private static void helper_removeClass(String className, NComponet... items) {
         for (NComponet item : items) {

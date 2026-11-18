@@ -2,6 +2,7 @@ package org.example.Core.DatabaseModule.db;
 
 import org.example.Core.DatabaseModule.model.*;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -90,6 +91,14 @@ public interface DatabaseModule {
     void updateBooking(Booking booking) throws SQLException;
     void updateBookingStatus(int bookingId, String status) throws SQLException;
     void deleteBooking(int bookingId) throws SQLException;
+
+    // ==========================================
+    // 13. TELEGRAM LINK CODE OPERATIONS
+    // ==========================================
+    void setTelegramLinkCode(int bookingId, String code, LocalDateTime expiresAt) throws SQLException;
+    Booking getBookingByTelegramLinkCode(String code) throws SQLException;
+    boolean consumeTelegramLinkCode(String code, long chatId) throws SQLException;
+    void clearExpiredTelegramLinkCodes() throws SQLException;
 
     // ==========================================
     // 8. BOOKING ROOM OPERATIONS (CRUD)

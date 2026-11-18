@@ -99,6 +99,8 @@ CREATE TABLE BOOKING(
 	check_out DATE NOT NULL,
 	status VARCHAR(10) NOT NULL DEFAULT 'PENDING' ,
 	created_at DATETIME2(0) NOT NULL DEFAULT SYSDATETIME(),
+	telegram_link_code VARCHAR(8) NULL,
+	telegram_link_code_expires DATETIME2 NULL,
 	CHECK (status IN('PENDING' , 'ACTIVE' , 'FINISHED' , 'CANCELED')) ,
 	CHECK (check_in < check_out),
 	CONSTRAINT FK_booking_booking_request FOREIGN KEY(request_id) REFERENCES BOOKING_REQUEST(request_id),
@@ -160,4 +162,12 @@ CREATE TABLE CUSTOMER_REPORT(
 	created_at DATETIME2(0) NOT NULL DEFAULT SYSDATETIME(),
 	CONSTRAINT FK_customer_report_customer FOREIGN KEY(customer_id) REFERENCES CUSTOMER(customer_id),
 	CONSTRAINT FK_customer_report_booking FOREIGN KEY(booking_id) REFERENCES BOOKING(booking_id) );
+GO
+
+-- Migration for existing databases (idempotent-ish: run once)
+IF COL_LENGTH('BOOKING', 'telegram_link_code') IS NULL
+BEGIN
+    ALTER TABLE BOOKING ADD telegram_link_code VARCHAR(8) NULL;
+    ALTER TABLE BOOKING ADD telegram_link_code_expires DATETIME2 NULL;
+END
 GO 

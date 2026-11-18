@@ -2,6 +2,7 @@ package org.example.Core.DatabaseModule.db;
 
 import org.example.Core.DatabaseModule.model.*;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -916,6 +917,65 @@ public class SqlServerDatabaseModule implements DatabaseModule {
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, bookingId);
+            ps.executeUpdate();
+        }
+    }
+
+    @Override
+    public void setTelegramLinkCode(int bookingId, String code, LocalDateTime expiresAt) throws SQLException {
+        String sql = "UPDATE BOOKING SET telegram_link_code = ?, telegram_link_code_expires = ? WHERE booking_id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, code);
+            ps.setTimestamp(2, Timestamp.valueOf(expiresAt));
+            ps.setInt(3, bookingId);
+            ps.executeUpdate();
+        }
+    }
+
+    @Override
+    public Booking getBookingByTelegramLinkCode(String code) throws SQLException {
+        String sql = "SELECT booking_id, request_id, customer_id, check_in, check_out, status, created_at FROM BOOKING WHERE telegram_link_code = ? AND telegram_link_code_expires > SYSDATETIME()";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, code);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapBooking(rs);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean consumeTelegramLinkCode(String code, long chatId) throws SQLException {
+        Booking booking = getBookingByTelegramLinkCode(code);
+        if (booking == null || booking.getCustomerId() <= 0) return false;
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = conn.prepareStatement("UPDATE CUSTOMER SET telegram_chat_id = ? WHERE customer_id = ?")) {
+                    ps.setLong(1, chatId);
+                    ps.setInt(2, booking.getCustomerId());
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = conn.prepareStatement("UPDATE BOOKING SET telegram_link_code = NULL, telegram_link_code_expires = NULL WHERE telegram_link_code = ?")) {
+                    ps.setString(1, code);
+                    ps.executeUpdate();
+                }
+                conn.commit();
+                return true;
+            } catch (SQLException ex) {
+                conn.rollback();
+                throw ex;
+            }
+        }
+    }
+
+    @Override
+    public void clearExpiredTelegramLinkCodes() throws SQLException {
+        String sql = "UPDATE BOOKING SET telegram_link_code = NULL, telegram_link_code_expires = NULL WHERE telegram_link_code IS NOT NULL AND telegram_link_code_expires < SYSDATETIME()";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.executeUpdate();
         }
     }

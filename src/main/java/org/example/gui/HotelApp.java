@@ -11,7 +11,11 @@ import org.example.Core.DatabaseModule.db.DatabaseModule;
 import org.example.Core.DatabaseModule.db.SqlServerDatabaseModule;
 import org.example.Core.DatabaseModule.model.ShopOwner;
 import org.example.Core.GoogleModule.GmailIntegrationService;
+import org.example.Core.TelegramModule.telegram.TelegramUpdateService;
 import org.example.logic.AuthModule.AuthService;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class HotelApp extends Application {
     public static DatabaseModule databaseModule = new SqlServerDatabaseModule("jdbc:sqlserver://localhost:1433;databaseName=HOTEL_DB;user=java_dev;password=123456789;encrypt=true;trustServerCertificate=true;","java_dev","123456789");
@@ -26,6 +30,32 @@ public class HotelApp extends Application {
             Platform.exit();
             System.exit(0);
         });
+
+        // Start Telegram bot polling (if token configured) on a daemon thread.
+        String tgToken = System.getenv("TELEGRAM_BOT_TOKEN");
+        if (tgToken != null && !tgToken.isBlank()) {
+            Thread tgThread = new Thread(() -> {
+                try {
+                    new TelegramUpdateService(databaseModule).startPolling();
+                } catch (Exception e) {
+                    System.out.println("Telegram bot error: " + e.getMessage());
+                }
+            }, "telegram-bot");
+            tgThread.setDaemon(true);
+            tgThread.start();
+        }
+
+        // Scheduler: clear expired telegram link codes every minute.
+        var codeScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "telegram-code-cleanup");
+            t.setDaemon(true);
+            return t;
+        });
+        codeScheduler.scheduleWithFixedDelay(() -> {
+            try { databaseModule.clearExpiredTelegramLinkCodes(); }
+            catch (Exception ignored) { }
+        }, 1, 1, TimeUnit.MINUTES);
+        Runtime.getRuntime().addShutdownHook(new Thread(codeScheduler::shutdownNow));
         primaryStage.setMaximized(true);
         NWindow window = new NWindow("App");
         window.setExternalDocument(getClass().getResource("/com/codehack/nngf/App/app/index.html").toExternalForm());

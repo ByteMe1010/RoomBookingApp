@@ -2,6 +2,7 @@ package org.example.Core.DatabaseModule.db;
 
 import org.example.Core.DatabaseModule.model.*;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -70,6 +71,13 @@ public interface DatabaseModule {
     BookingRequest getBookingRequestById(int requestId) throws SQLException;
     List<BookingRequest> getAllBookingRequests() throws SQLException;
     List<BookingRequest> getPendingBookingRequests() throws SQLException;
+
+    BookingRequest getBookingRequestByEmailMessageId(String emailMessageId) throws SQLException;
+
+    BookingRequest getBookingRequestByBookingRef(String bookingRef) throws SQLException;
+
+    List<BookingRequest> getBookingRequests(String status, String... searchQ) throws SQLException;
+
     void updateBookingRequest(BookingRequest request) throws SQLException;
     void updateBookingRequestStatus(int requestId, String status, int decidedBy) throws SQLException;
     void deleteBookingRequest(int requestId) throws SQLException;
@@ -85,6 +93,14 @@ public interface DatabaseModule {
     void deleteBooking(int bookingId) throws SQLException;
 
     // ==========================================
+    // 13. TELEGRAM LINK CODE OPERATIONS
+    // ==========================================
+    void setTelegramLinkCode(int bookingId, String code, LocalDateTime expiresAt) throws SQLException;
+    Booking getBookingByTelegramLinkCode(String code) throws SQLException;
+    boolean consumeTelegramLinkCode(String code, long chatId) throws SQLException;
+    void clearExpiredTelegramLinkCodes() throws SQLException;
+
+    // ==========================================
     // 8. BOOKING ROOM OPERATIONS (CRUD)
     // ==========================================
     void linkRoomToBooking(BookingRoom bookingRoom) throws SQLException;
@@ -97,6 +113,8 @@ public interface DatabaseModule {
     // 9. ITEM ORDER OPERATIONS (CRUD)
     // ==========================================
     int addOrderToBooking(ItemOrder order) throws SQLException;
+    int purchaseItemOrder(ItemOrder order) throws SQLException;
+    boolean cancelItemOrderAndRestock(int orderId) throws SQLException;
     ItemOrder getOrderById(int orderId) throws SQLException;
     List<ItemOrder> getOrdersForBooking(int bookingId) throws SQLException;
     void updateItemOrder(ItemOrder order) throws SQLException;

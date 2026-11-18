@@ -12,7 +12,10 @@
         <maven.compiler.source>27</maven.compiler.source>
         <maven.compiler.target>27</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <javafx.version>27</javafx.version>
     </properties>
+
 
     <dependencies>
         <!-- Database Dependency -->
@@ -34,6 +37,57 @@
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-gmail</artifactId>
             <version>v1-rev20261005-2.9.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.oauth-client</groupId>
+            <artifactId>google-oauth-client-jetty</artifactId>
+            <version>1.36.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.http-client</groupId>
+            <artifactId>google-http-client-gson</artifactId>
+            <version>2.0.0</version>
+        </dependency>
+
+        <!-- Testing Framework (JUnit 5) -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.11.4</version>
+            <scope>test</scope>
+        </dependency>
+
+
+        <!-- HTML Escaping -->
+        <dependency>
+            <groupId>org.unbescape</groupId>
+            <artifactId>unbescape</artifactId>
+            <version>1.1.6.RELEASE</version>
+        </dependency>
+
+        <!-- JavaFX Dependencies (Now using 27) -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <!-- javafx-web transitively brings javafx-controls, javafx-media and jdk-jsobject -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-web</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <!-- Networking & JSON -->
+        <dependency>
+            <groupId>org.java-websocket</groupId>
+            <artifactId>Java-WebSocket</artifactId>
+            <version>1.5.7</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.17.2</version>
         </dependency>
         <dependency><groupId>com.google.oauth-client</groupId><artifactId>google-oauth-client-jetty</artifactId><version>1.36.0</version></dependency>
         <dependency><groupId>com.google.http-client</groupId><artifactId>google-http-client-gson</artifactId><version>2.0.0</version></dependency>

@@ -1,0 +1,738 @@
+/* ========================================
+   Win10 Dark/Light Theme for NNGF2
+   Overrides nngf-base.css with Win10 UI Kit
+   Supports data-theme="light" switching
+   ======================================== */
+
+:root {
+  --win-bg-base: #333333;
+  --win-bg-surface: #3A3A3A;
+  --win-bg-elevated: #3F3F3F;
+  --win-bg-deep: #2C2C2C;
+  --win-bg-input: #2E2E2E;
+  --win-border: #2E2E2E;
+  --win-border-strong: #444444;
+  --win-text: #FFFFFF;
+  --win-text-secondary: #B0B0B0;
+  --win-text-muted: #808080;
+  --win-accent: #4CC2FF;
+  --win-accent-hover: #49B3EA;
+  --win-accent-2: #FF99A4;
+  --win-success: #6BCB77;
+  --win-warning: #FFB74D;
+  --win-danger: #F06292;
+  --win-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  --win-radius: 6px;
+  --win-radius-sm: 4px;
+  --win-rad-lg: 0;
+  --win-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --win-transition: 150ms ease;
+
+  /* Map base CSS vars → theme vars so un-themed components inherit theme colors */
+  --nngf-text: var(--win-text);
+  --nngf-text-secondary: var(--win-text-secondary);
+  --nngf-text-tertiary: var(--win-text-muted);
+  --nngf-bg: var(--win-bg-surface);
+  --nngf-bg-secondary: var(--win-bg-base);
+  --nngf-bg-tertiary: var(--win-bg-deep);
+  --nngf-border: var(--win-border);
+  --nngf-border-hover: var(--win-border-strong);
+  --nngf-border-focus: var(--win-accent);
+  --nngf-primary: var(--win-accent);
+  --nngf-primary-text: #FFFFFF;
+  --nngf-radius: var(--win-radius);
+  --nngf-radius-sm: var(--win-radius-sm);
+  --nngf-radius-lg: var(--win-rad-lg);
+  --nngf-shadow: var(--win-shadow);
+  --nngf-shadow-md: var(--win-shadow);
+  --nngf-transition: var(--win-transition);
+  --nngf-font: var(--win-font);
+}
+
+[data-theme="light"] {
+  --win-bg-base: #F2F2F2;
+  --win-bg-surface: #FFFFFF;
+  --win-bg-elevated: #FAFAFA;
+  --win-bg-deep: #E8E8E8;
+  --win-bg-input: #FFFFFF;
+  --win-border: #DCDCDC;
+  --win-border-strong: #B8B8B8;
+  --win-text: #1A1A1A;
+  --win-text-secondary: #555555;
+  --win-text-muted: #888888;
+  --win-accent: #2196F3;
+  --win-accent-hover: #1976D2;
+  --win-accent-2: #E91E63;
+  --win-success: #4CAF50;
+  --win-warning: #FF9800;
+  --win-danger: #E53935;
+  --win-shadow: 0 2px 8px rgba(0,0,0,0.08);
+
+  /* Map base CSS vars → theme vars (light mode) */
+  --nngf-text: var(--win-text);
+  --nngf-text-secondary: var(--win-text-secondary);
+  --nngf-text-tertiary: var(--win-text-muted);
+  --nngf-bg: var(--win-bg-surface);
+  --nngf-bg-secondary: var(--win-bg-base);
+  --nngf-bg-tertiary: var(--win-bg-deep);
+  --nngf-border: var(--win-border);
+  --nngf-border-hover: var(--win-border-strong);
+  --nngf-border-focus: var(--win-accent);
+  --nngf-primary: var(--win-accent);
+  --nngf-primary-text: #FFFFFF;
+  --nngf-radius: var(--win-radius);
+  --nngf-radius-sm: var(--win-radius-sm);
+  --nngf-radius-lg: var(--win-rad-lg);
+  --nngf-shadow: var(--win-shadow);
+  --nngf-shadow-md: var(--win-shadow);
+  --nngf-transition: var(--win-transition);
+  --nngf-font: var(--win-font);
+}
+
+/* ---- Page background / text defaults ---- */
+html, body {
+  background: var(--win-bg-base);
+  color: var(--win-text);
+  font-family: var(--win-font);
+}
+
+/* ---- Scrollbar ---- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--win-border-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--win-border-strong);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--win-text-muted);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ===== Global ===== */
+.NNGF-Button,
+.NNGF-ToggleButton,
+.NNGF-TextField,
+.NNGF-NumberField,
+.NNGF-TextArea,
+.NNGF-ComboBox,
+.NNGF-CheckBox,
+.NNGF-Slider,
+.NNGF-ProgressBar,
+.NNGF-Label,
+.NNGF-Link,
+.NNGF-Separator,
+.NNGF-Panel,
+.NNGF-Card,
+.NNGF-GroupBox,
+.NNGF-ScrollPane,
+.NNGF-ListBox,
+.NNGF-Dialog,
+.NNGF-Toast,
+.NNGF-Alert,
+.NNGF-Badge,
+.NNGF-Spinner,
+.NNGF-Accordion,
+.NNGF-Tooltip,
+.NNGF-Toolbar,
+.NNGF-Breadcrumbs,
+.NNGF-Sidebar,
+.NNGF-Table,
+.NNGF-SplitPane,
+.NNGF-IFrame,
+.NNGF-Video,
+.NNGF-Image {
+  font-family: var(--win-font);
+  color: var(--win-text);
+  transition: background var(--win-transition), border-color var(--win-transition), color var(--win-transition);
+}
+
+/* ===== Button ===== */
+.NNGF-Button {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--win-radius);
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--win-bg-elevated);
+  color: var(--win-text);
+  border-color: var(--win-border-strong);
+  user-select: none; white-space: nowrap;
+  font-family: inherit;
+}
+.NNGF-Button:hover { background: var(--win-bg-deep); }
+.NNGF-Button:active { opacity: 0.85; }
+.NNGF-Button:focus-visible { outline: 2px solid var(--win-accent); outline-offset: 2px; }
+.NNGF-Button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== ToggleButton (switch) ===== */
+.NNGF-ToggleButton {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  width: 36px; height: 20px;
+  border-radius: 20px;
+  background: var(--win-bg-deep);
+  border: 1px solid var(--win-border-strong);
+  cursor: pointer; position: relative;
+  flex-shrink: 0;
+  transition: background var(--win-transition);
+}
+.NNGF-ToggleButton::after {
+  content: '';
+  position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--win-text-muted);
+  transition: transform var(--win-transition), background var(--win-transition);
+}
+.NNGF-ToggleButton:checked { background: var(--win-accent); border-color: var(--win-accent); }
+.NNGF-ToggleButton:checked::after { transform: translateX(16px); background: #fff; }
+.NNGF-ToggleButton:focus-visible { outline: 2px solid var(--win-accent); outline-offset: 2px; }
+.NNGF-ToggleButton:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== TextField ===== */
+.NNGF-TextField {
+  height: 32px;
+  padding: 0 10px;
+  background: var(--win-bg-input);
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+  color: var(--win-text);
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.4;
+}
+.NNGF-TextField:hover { border-color: var(--win-border-strong); }
+.NNGF-TextField:focus { border-color: var(--win-accent); outline: none; }
+.NNGF-TextField:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== NumberField ===== */
+.NNGF-NumberField {
+  height: 32px;
+  padding: 0 10px;
+  background: var(--win-bg-input);
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+  color: var(--win-text);
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.4;
+}
+.NNGF-NumberField:hover { border-color: var(--win-border-strong); }
+.NNGF-NumberField:focus { border-color: var(--win-accent); outline: none; }
+.NNGF-NumberField:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== TextArea ===== */
+.NNGF-TextArea {
+  padding: 8px 10px;
+  background: var(--win-bg-input);
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+  color: var(--win-text);
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 70px;
+}
+.NNGF-TextArea:hover { border-color: var(--win-border-strong); }
+.NNGF-TextArea:focus { border-color: var(--win-accent); outline: none; }
+
+/* ===== ComboBox ===== */
+.NNGF-ComboBox {
+  height: 32px;
+  padding: 0 28px 0 10px;
+  background: var(--win-bg-input);
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+  color: var(--win-text);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23888' d='M5 6L0 0h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  min-width: 120px;
+}
+.NNGF-ComboBox:hover { border-color: var(--win-border-strong); }
+.NNGF-ComboBox:focus { border-color: var(--win-accent); outline: none; }
+.NNGF-ComboBox:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== CheckBox ===== */
+.NNGF-CheckBox {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  width: 16px; height: 16px;
+  border: 1px solid var(--win-border-strong);
+  border-radius: 3px;
+  background: var(--win-bg-input);
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color var(--win-transition), background var(--win-transition);
+}
+.NNGF-CheckBox:hover { border-color: var(--win-accent); }
+.NNGF-CheckBox:checked { background: var(--win-accent); border-color: var(--win-accent); }
+.NNGF-CheckBox:checked::after {
+  content: '';
+  position: absolute; left: 4px; top: 1px;
+  width: 5px; height: 9px;
+  border: solid #fff; border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.NNGF-CheckBox:focus-visible { outline: 2px solid var(--win-accent); outline-offset: 2px; }
+.NNGF-CheckBox:indeterminate { background: var(--win-accent); border-color: var(--win-accent); }
+.NNGF-CheckBox:indeterminate::after {
+  content: '';
+  position: absolute; left: 3px; top: 7px;
+  width: 10px; height: 2px;
+  background: #fff;
+}
+.NNGF-CheckBox:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== Slider ===== */
+.NNGF-Slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px;
+  background: var(--win-bg-deep);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+.NNGF-Slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--win-accent);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.NNGF-Slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+.NNGF-Slider::-moz-range-thumb {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--win-accent);
+  border: none;
+  cursor: pointer;
+}
+.NNGF-Slider:focus-visible { outline: 2px solid var(--win-accent); outline-offset: 2px; }
+.NNGF-Slider:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== ProgressBar ===== */
+.NNGF-ProgressBar { display: flex; width: 100%; }
+.NNGF-ProgressBar-track {
+  flex: 1; height: 6px;
+  background: var(--win-bg-deep);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.NNGF-ProgressBar-fill {
+  height: 100%;
+  background: var(--win-accent);
+  border-radius: 3px;
+  transition: width 300ms ease;
+}
+.NNGF-ProgressBar-fill-indeterminate {
+  width: 40%;
+  animation: win-progress-indeterminate 1.5s ease infinite;
+}
+@keyframes win-progress-indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+/* ===== Label ===== */
+.NNGF-Label {
+  font-family: inherit; font-size: inherit;
+  color: inherit; line-height: 1.4;
+}
+
+/* ===== Link ===== */
+.NNGF-Link {
+  font-family: inherit; font-size: inherit;
+  color: var(--win-accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+.NNGF-Link:hover { text-decoration: underline; }
+
+/* ===== Separator ===== */
+.NNGF-Separator {
+  border: none;
+  height: 1px;
+  background: var(--win-border);
+  margin: 8px 0;
+  width: 100%;
+}
+
+/* ===== Panel ===== */
+.NNGF-Panel {
+  background: var(--win-bg-surface);
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+  padding: 18px;
+}
+
+/* ===== Card ===== */
+.NNGF-Card {
+  background: var(--win-bg-surface);
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+  overflow: hidden;
+}
+.NNGF-Card-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--win-border);
+  background: var(--win-bg-elevated);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--win-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.NNGF-Card-body { padding: 18px; }
+.NNGF-Card-footer {
+  padding: 10px 14px;
+  border-top: 1px solid var(--win-border);
+  background: var(--win-bg-elevated);
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+
+/* ===== GroupBox ===== */
+.NNGF-GroupBox {
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+  padding: 14px;
+  padding-top: 18px;
+  position: relative;
+}
+.NNGF-GroupBox-legend {
+  position: absolute; top: -8px; left: 12px;
+  background: var(--win-bg-surface);
+  padding: 0 6px;
+  font-size: 11px; font-weight: 600;
+  color: var(--win-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== ScrollPane ===== */
+.NNGF-ScrollPane {
+  overflow: auto;
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+  background: var(--win-bg-surface);
+}
+.NNGF-ScrollPane::-webkit-scrollbar { width: 8px; height: 8px; }
+.NNGF-ScrollPane::-webkit-scrollbar-track { background: transparent; }
+.NNGF-ScrollPane::-webkit-scrollbar-thumb { background: var(--win-border-strong); border-radius: 4px; }
+.NNGF-ScrollPane::-webkit-scrollbar-thumb:hover { background: var(--win-text-muted); }
+.NNGF-ScrollPane::-webkit-scrollbar-corner { background: transparent; }
+
+/* ===== ListBox ===== */
+.NNGF-ListBox {
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+  background: var(--win-bg-surface);
+  overflow: auto;
+}
+.NNGF-ListBox-item {
+  display: block;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: inherit;
+  border-bottom: 1px solid var(--win-border);
+  transition: background var(--win-transition);
+}
+.NNGF-ListBox-item:last-child { border-bottom: none; }
+.NNGF-ListBox-item:hover { background: var(--win-bg-elevated); }
+.NNGF-ListBox-item-selected {
+  background: var(--win-bg-elevated);
+  border-left: 2px solid var(--win-accent);
+  padding-left: 10px;
+  color: var(--win-text);
+  font-weight: 500;
+}
+
+/* ===== Dialog ===== */
+.NNGF-Dialog {
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+  padding: 0;
+  box-shadow: var(--win-shadow);
+  max-width: 320px;
+  max-height: 85vh;
+  overflow: auto;
+  background: var(--win-bg-surface);
+}
+.NNGF-Dialog::backdrop {
+  background: rgba(0,0,0,0.4);
+}
+.NNGF-Dialog[open] {
+  display: flex; flex-direction: column;
+}
+
+/* ===== Toast ===== */
+.NNGF-Toast {
+  display: inline-flex; align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--win-bg-deep);
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+  font-size: 12px;
+  color: var(--win-text);
+  box-shadow: var(--win-shadow);
+  min-width: 240px;
+  pointer-events: auto;
+}
+
+/* ===== Alert ===== */
+.NNGF-Alert {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 10px 12px;
+  border-radius: var(--win-radius);
+  background: var(--win-bg-elevated);
+  border: 1px solid var(--win-border);
+  font-size: 12px;
+  color: var(--win-text);
+}
+.NNGF-Alert-title {
+  font-weight: 600;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.NNGF-Alert-close {
+  background: none; border: none;
+  font-size: 18px; cursor: pointer;
+  color: inherit; padding: 0 0 0 8px;
+  line-height: 1; opacity: 0.6;
+}
+.NNGF-Alert-close:hover { opacity: 1; }
+.NNGF-Alert-body { font-size: 12px; color: var(--win-text-secondary); }
+
+/* ===== Badge ===== */
+.NNGF-Badge {
+  display: inline-flex; align-items: center;
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--win-bg-deep);
+  color: var(--win-text-secondary);
+  border: 1px solid var(--win-border);
+  white-space: nowrap;
+}
+
+/* ===== Spinner ===== */
+.NNGF-Spinner {
+  display: inline-block;
+  width: 24px; height: 24px;
+  border: 3px solid var(--win-border);
+  border-top-color: var(--win-accent);
+  border-radius: 50%;
+  animation: win-spin 0.7s linear infinite;
+}
+@keyframes win-spin { to { transform: rotate(360deg); } }
+
+/* ===== CardPane ===== */
+nngf-cardpane {
+  display: block; position: relative;
+  min-height: 80px;
+}
+
+/* ===== Accordion ===== */
+.NNGF-Accordion {
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+  overflow: hidden;
+  background: var(--win-bg-surface);
+}
+.NNGF-Accordion details {
+  border-bottom: 1px solid var(--win-border);
+}
+.NNGF-Accordion details:last-child { border-bottom: none; }
+.NNGF-Accordion summary {
+  padding: 10px 12px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex; justify-content: space-between; align-items: center;
+  user-select: none;
+  font-family: inherit; font-size: 13px; color: inherit;
+  background: var(--win-bg-elevated);
+  list-style: none;
+}
+.NNGF-Accordion summary::-webkit-details-marker { display: none; }
+.NNGF-Accordion summary::after {
+  content: '\25BC';
+  font-size: 10px;
+  transition: transform var(--win-transition);
+  color: var(--win-text-muted);
+}
+.NNGF-Accordion details[open] summary::after {
+  transform: rotate(180deg);
+}
+.NNGF-Accordion summary:hover { background: var(--win-bg-deep); }
+.NNGF-Accordion-body { padding: 10px 12px; font-size: 12px; color: var(--win-text-secondary); }
+
+/* ===== Tooltip ===== */
+.NNGF-Tooltip {
+  position: relative; display: inline-flex; cursor: help;
+}
+.NNGF-Tooltip-content {
+  position: absolute;
+  bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: var(--win-radius-sm);
+  background: var(--win-bg-deep);
+  color: var(--win-text);
+  border: 1px solid var(--win-border);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--win-transition);
+  z-index: 50;
+}
+.NNGF-Tooltip:hover .NNGF-Tooltip-content { opacity: 1; }
+
+/* ===== Toolbar ===== */
+.NNGF-Toolbar {
+  display: flex; align-items: center; gap: 4px;
+  padding: 6px 8px;
+  background: var(--win-bg-deep);
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+}
+.NNGF-Toolbar-group { display: flex; align-items: center; gap: 2px; }
+.NNGF-Toolbar-sep {
+  width: 1px; height: 20px;
+  background: var(--win-border-strong);
+  margin: 0 4px;
+}
+.NNGF-Toolbar button {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: inherit; font-size: 13px;
+  padding: 4px 10px;
+  border: none; border-radius: var(--win-radius-sm);
+  background: transparent;
+  color: var(--win-text);
+  cursor: pointer;
+  gap: 4px;
+  height: auto;
+}
+.NNGF-Toolbar button:hover { background: var(--win-bg-elevated); }
+.NNGF-Toolbar button:active { background: var(--win-border); }
+.NNGF-Toolbar button:focus-visible { outline: 2px solid var(--win-accent); outline-offset: 2px; }
+
+/* ===== Breadcrumbs ===== */
+.NNGF-Breadcrumbs {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px;
+  color: var(--win-text-muted);
+}
+.NNGF-Breadcrumbs-item { color: var(--win-text-secondary); cursor: pointer; text-decoration: none; }
+.NNGF-Breadcrumbs-item:hover { color: var(--win-accent); }
+.NNGF-Breadcrumbs-item-active { color: var(--win-text); font-weight: 500; cursor: default; }
+.NNGF-Breadcrumbs-sep { color: var(--win-text-muted); user-select: none; }
+
+/* ===== Sidebar ===== */
+.NNGF-Sidebar {
+  width: 200px;
+  background: var(--win-bg-deep);
+  border-right: 1px solid var(--win-border);
+  padding: 16px 0;
+  overflow-y: auto;
+}
+.NNGF-Sidebar-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 16px;
+  cursor: pointer;
+  color: var(--win-text-secondary);
+  font-size: 13px;
+  border-left: 2px solid transparent;
+  transition: all var(--win-transition);
+}
+.NNGF-Sidebar-item:hover { background: var(--win-bg-surface); color: var(--win-text); }
+.NNGF-Sidebar-item-active {
+  background: var(--win-bg-surface);
+  color: var(--win-accent);
+  border-left-color: var(--win-accent);
+  font-weight: 500;
+}
+.NNGF-Sidebar-section {
+  font-size: 10px; font-weight: 600;
+  color: var(--win-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 16px 4px;
+}
+
+/* ===== Table ===== */
+.NNGF-Table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.NNGF-Table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--win-border);
+  background: var(--win-bg-deep);
+  color: var(--win-text-secondary);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+.NNGF-Table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--win-border);
+  color: var(--win-text);
+}
+.NNGF-Table tbody tr:last-child td { border-bottom: none; }
+.NNGF-Table tbody tr:hover td { background: var(--win-bg-elevated); }
+
+/* ===== SplitPane ===== */
+.NNGF-SplitPane {
+  display: flex;
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+  background: var(--win-bg-surface);
+  overflow: hidden;
+}
+.NNGF-SplitPane-vertical { flex-direction: column; }
+.NNGF-SplitPane-divider {
+  flex-shrink: 0;
+  background: var(--win-border);
+  cursor: col-resize;
+}
+.NNGF-SplitPane-vertical .NNGF-SplitPane-divider { cursor: row-resize; width: 100%; height: 4px; }
+.NNGF-SplitPane-pane { overflow: auto; padding: 18px; }
+
+/* ===== IFrame ===== */
+.NNGF-IFrame {
+  border: 1px solid var(--win-border);
+  border-radius: var(--win-radius);
+  width: 100%;
+}
+
+/* ===== Video ===== */
+.NNGF-Video { border-radius: var(--win-radius); max-width: 100%; }
+
+/* ===== Image ===== */
+.NNGF-Image { border-radius: var(--win-radius); max-width: 100%; height: auto; display: inline-block; }

@@ -2,6 +2,7 @@ package org.example.Core.DatabaseModule.db;
 
 import org.example.Core.DatabaseModule.model.*;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -698,6 +699,47 @@ public class SqlServerDatabaseModule implements DatabaseModule {
     }
 
     @Override
+    public BookingRequest getBookingRequestByEmailMessageId(String emailMessageId) throws SQLException {
+        String sql = "SELECT request_id, customer_id, email_message_id, booking_ref, guest_name, guest_phone, check_in, check_out, rooms_wanted, meal_plan_id, total_price, special_request, status, received_at, decided_by, decided_at FROM BOOKING_REQUEST WHERE email_message_id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, emailMessageId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapBookingRequest(rs);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public BookingRequest getBookingRequestByBookingRef(String bookingRef) throws SQLException {
+        String sql = "SELECT request_id, customer_id, email_message_id, booking_ref, guest_name, guest_phone, check_in, check_out, rooms_wanted, meal_plan_id, total_price, special_request, status, received_at, decided_by, decided_at FROM BOOKING_REQUEST WHERE booking_ref = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, bookingRef);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapBookingRequest(rs);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<BookingRequest> getBookingRequests(String status, String... searchQ) throws SQLException {
+        List<BookingRequest> requests = new ArrayList<>();
+        String sql = "SELECT request_id, customer_id, email_message_id, booking_ref, guest_name, guest_phone, check_in, check_out, rooms_wanted, meal_plan_id, total_price, special_request, status, received_at, decided_by, decided_at FROM BOOKING_REQUEST WHERE status = ? "+((searchQ.length>0) ? "AND guest_name LIKE ?":"");
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql);) {
+            ps.setString(1,status);
+            if(searchQ.length>0) ps.setString(2,searchQ[0]);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                requests.add(mapBookingRequest(rs));
+            }
+        }
+        return requests;
+    }
+
+    @Override
     public void updateBookingRequest(BookingRequest request) throws SQLException {
         String sql = "UPDATE BOOKING_REQUEST SET customer_id = ?, booking_ref = ?, guest_name = ?, guest_phone = ?, check_in = ?, check_out = ?, rooms_wanted = ?, meal_plan_id = ?, total_price = ?, special_request = ?, status = ? WHERE request_id = ?";
         try (Connection conn = getConnection();
@@ -875,6 +917,65 @@ public class SqlServerDatabaseModule implements DatabaseModule {
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, bookingId);
+            ps.executeUpdate();
+        }
+    }
+
+    @Override
+    public void setTelegramLinkCode(int bookingId, String code, LocalDateTime expiresAt) throws SQLException {
+        String sql = "UPDATE BOOKING SET telegram_link_code = ?, telegram_link_code_expires = ? WHERE booking_id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, code);
+            ps.setTimestamp(2, Timestamp.valueOf(expiresAt));
+            ps.setInt(3, bookingId);
+            ps.executeUpdate();
+        }
+    }
+
+    @Override
+    public Booking getBookingByTelegramLinkCode(String code) throws SQLException {
+        String sql = "SELECT booking_id, request_id, customer_id, check_in, check_out, status, created_at FROM BOOKING WHERE telegram_link_code = ? AND telegram_link_code_expires > SYSDATETIME()";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, code);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapBooking(rs);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean consumeTelegramLinkCode(String code, long chatId) throws SQLException {
+        Booking booking = getBookingByTelegramLinkCode(code);
+        if (booking == null || booking.getCustomerId() <= 0) return false;
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = conn.prepareStatement("UPDATE CUSTOMER SET telegram_chat_id = ? WHERE customer_id = ?")) {
+                    ps.setLong(1, chatId);
+                    ps.setInt(2, booking.getCustomerId());
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = conn.prepareStatement("UPDATE BOOKING SET telegram_link_code = NULL, telegram_link_code_expires = NULL WHERE telegram_link_code = ?")) {
+                    ps.setString(1, code);
+                    ps.executeUpdate();
+                }
+                conn.commit();
+                return true;
+            } catch (SQLException ex) {
+                conn.rollback();
+                throw ex;
+            }
+        }
+    }
+
+    @Override
+    public void clearExpiredTelegramLinkCodes() throws SQLException {
+        String sql = "UPDATE BOOKING SET telegram_link_code = NULL, telegram_link_code_expires = NULL WHERE telegram_link_code IS NOT NULL AND telegram_link_code_expires < SYSDATETIME()";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.executeUpdate();
         }
     }
@@ -1353,5 +1454,119 @@ public class SqlServerDatabaseModule implements DatabaseModule {
                 rs.getString("note"),
                 (cAt != null) ? cAt.toLocalDateTime() : null
         );
+    }
+
+    @Override
+    public int purchaseItemOrder(ItemOrder order) throws SQLException {
+        Connection conn = getConnection();
+        try {
+            conn.setAutoCommit(false);
+
+            String itemSql = "SELECT stock_amount, is_active FROM ITEM WITH (UPDLOCK, HOLDLOCK) WHERE item_id = ?";
+            double stock;
+            boolean active;
+            try (PreparedStatement itemPs = conn.prepareStatement(itemSql)) {
+                itemPs.setInt(1, order.getItemId());
+                try (ResultSet rs = itemPs.executeQuery()) {
+                    if (!rs.next()) throw new SQLException("Item was not found.");
+                    stock = rs.getDouble("stock_amount");
+                    active = rs.getBoolean("is_active");
+                }
+            }
+
+            if (!active) throw new SQLException("Archived items cannot be ordered.");
+            if (order.getAmount() <= 0) throw new SQLException("Order amount must be greater than zero.");
+            if (order.getAmount() > stock) throw new SQLException("Insufficient stock. Available: " + stock);
+
+            String insertSql = "INSERT INTO ITEM_ORDER (booking_id, item_id, amount, unit_price) VALUES (?, ?, ?, ?)";
+            int orderId = -1;
+            try (PreparedStatement insertPs = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
+                insertPs.setInt(1, order.getBookingId());
+                insertPs.setInt(2, order.getItemId());
+                insertPs.setDouble(3, order.getAmount());
+                insertPs.setDouble(4, order.getUnitPrice());
+                insertPs.executeUpdate();
+                try (ResultSet keys = insertPs.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        orderId = keys.getInt(1);
+                        order.setOrderId(orderId);
+                    }
+                }
+            }
+
+            if (orderId <= 0) throw new SQLException("Failed to record item order.");
+
+            try (PreparedStatement stockPs = conn.prepareStatement("UPDATE ITEM SET stock_amount = stock_amount - ? WHERE item_id = ?")) {
+                stockPs.setDouble(1, order.getAmount());
+                stockPs.setInt(2, order.getItemId());
+                stockPs.executeUpdate();
+            }
+
+            conn.commit();
+            return orderId;
+        } catch (SQLException exception) {
+            try {
+                conn.rollback();
+            } catch (SQLException rollbackException) {
+                exception.addSuppressed(rollbackException);
+            }
+            throw exception;
+        } finally {
+            try {
+                conn.close();
+            } catch (SQLException exception) {
+                // Connection cleanup failure should not mask the database operation result.
+            }
+        }
+    }
+
+    @Override
+    public boolean cancelItemOrderAndRestock(int orderId) throws SQLException {
+        Connection conn = getConnection();
+        try {
+            conn.setAutoCommit(false);
+
+            int itemId;
+            double amount;
+            try (PreparedStatement selectPs = conn.prepareStatement(
+                    "SELECT item_id, amount FROM ITEM_ORDER WITH (UPDLOCK, HOLDLOCK) WHERE order_id = ?")) {
+                selectPs.setInt(1, orderId);
+                try (ResultSet rs = selectPs.executeQuery()) {
+                    if (!rs.next()) {
+                        conn.rollback();
+                        return false;
+                    }
+                    itemId = rs.getInt("item_id");
+                    amount = rs.getDouble("amount");
+                }
+            }
+
+            try (PreparedStatement deletePs = conn.prepareStatement("DELETE FROM ITEM_ORDER WHERE order_id = ?")) {
+                deletePs.setInt(1, orderId);
+                deletePs.executeUpdate();
+            }
+
+            try (PreparedStatement stockPs = conn.prepareStatement("UPDATE ITEM SET stock_amount = stock_amount + ? WHERE item_id = ?")) {
+                stockPs.setDouble(1, amount);
+                stockPs.setInt(2, itemId);
+                stockPs.executeUpdate();
+            }
+
+            conn.commit();
+            return true;
+        } catch (SQLException exception) {
+            try {
+                conn.rollback();
+            } catch (SQLException rollbackException) {
+                exception.addSuppressed(rollbackException);
+            }
+            throw exception;
+        } finally {
+            try {
+                conn.close();
+            } catch (SQLException exception) {
+                // Connection cleanup failure should not mask the database operation result.
+            }
+        }
     }
 }

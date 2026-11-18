@@ -1,0 +1,542 @@
+/* ========================================
+   NNGF2 Default GUI Styles
+   Cross-browser consistency layer
+   Not a theme — themes override via CSS vars
+   ======================================== */
+
+:root {
+  --nngf-bg: #ffffff;
+  --nngf-bg-secondary: #f5f5f7;
+  --nngf-bg-tertiary: #e8e8ed;
+  --nngf-text: #1d1d1f;
+  --nngf-text-secondary: #6e6e73;
+  --nngf-text-tertiary: #86868b;
+  --nngf-border: #d2d2d7;
+  --nngf-border-hover: #a1a1a6;
+  --nngf-border-focus: #0071e3;
+  --nngf-primary: #0071e3;
+  --nngf-primary-text: #ffffff;
+  --nngf-radius: 8px;
+  --nngf-radius-sm: 6px;
+  --nngf-radius-lg: 12px;
+  --nngf-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --nngf-shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --nngf-transition: 200ms ease;
+  --nngf-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --nngf-gap: 8px;
+  --nngf-gap-lg: 16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ===== Button ===== */
+.NNGF-Button {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px;
+  font-family: inherit; font-size: inherit; line-height: 1;
+  padding: 8px 20px;
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius);
+  background: var(--nngf-bg);
+  color: var(--nngf-text);
+  cursor: pointer;
+  user-select: none; white-space: nowrap;
+  transition: border-color var(--nngf-transition), background var(--nngf-transition);
+}
+.NNGF-Button:hover { background: var(--nngf-bg-secondary); border-color: var(--nngf-border-hover); }
+.NNGF-Button:active { background: var(--nngf-bg-tertiary); }
+.NNGF-Button:focus-visible { outline: 2px solid var(--nngf-border-focus); outline-offset: 2px; }
+.NNGF-Button:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+
+/* ===== ToggleButton ===== */
+.NNGF-ToggleButton {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  width: 36px; height: 20px;
+  border-radius: 10px;
+  background: var(--nngf-border);
+  cursor: pointer; position: relative;
+  transition: background var(--nngf-transition);
+  flex-shrink: 0;
+}
+.NNGF-ToggleButton::after {
+  content: '';
+  position: absolute; top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform var(--nngf-transition);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.NNGF-ToggleButton:checked { background: var(--nngf-primary); }
+.NNGF-ToggleButton:checked::after { transform: translateX(16px); }
+.NNGF-ToggleButton:focus-visible { outline: 2px solid var(--nngf-border-focus); outline-offset: 2px; }
+.NNGF-ToggleButton:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== TextField (input[type=text/password/number/...]) ===== */
+.NNGF-TextField {
+  font-family: inherit; font-size: inherit;
+  padding: 8px 12px;
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius);
+  background: var(--nngf-bg);
+  color: inherit;
+  line-height: 1.4;
+  transition: border-color var(--nngf-transition);
+}
+.NNGF-TextField:hover { border-color: var(--nngf-border-hover); }
+.NNGF-TextField:focus { border-color: var(--nngf-border-focus); box-shadow: 0 0 0 2px rgba(0,113,227,0.15); outline: none; }
+.NNGF-TextField:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== NumberField ===== */
+.NNGF-NumberField {
+  font-family: inherit; font-size: inherit;
+  padding: 8px 12px;
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius);
+  background: var(--nngf-bg);
+  color: inherit;
+  line-height: 1.4;
+  transition: border-color var(--nngf-transition);
+}
+.NNGF-NumberField:hover { border-color: var(--nngf-border-hover); }
+.NNGF-NumberField:focus { border-color: var(--nngf-border-focus); box-shadow: 0 0 0 2px rgba(0,113,227,0.15); outline: none; }
+.NNGF-NumberField:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== TextArea ===== */
+.NNGF-TextArea {
+  font-family: inherit; font-size: inherit;
+  padding: 8px 12px;
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius);
+  background: var(--nngf-bg);
+  color: inherit;
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color var(--nngf-transition);
+}
+.NNGF-TextArea:hover { border-color: var(--nngf-border-hover); }
+.NNGF-TextArea:focus { border-color: var(--nngf-border-focus); box-shadow: 0 0 0 2px rgba(0,113,227,0.15); outline: none; }
+
+/* ===== ComboBox ===== */
+.NNGF-ComboBox {
+  font-family: inherit; font-size: inherit;
+  padding: 8px 28px 8px 12px;
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius);
+  background: var(--nngf-bg);
+  color: inherit;
+  cursor: pointer;
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236e6e73' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  min-width: 120px;
+  transition: border-color var(--nngf-transition);
+}
+.NNGF-ComboBox:hover { border-color: var(--nngf-border-hover); }
+.NNGF-ComboBox:focus { border-color: var(--nngf-border-focus); box-shadow: 0 0 0 2px rgba(0,113,227,0.15); outline: none; }
+.NNGF-ComboBox:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== CheckBox ===== */
+.NNGF-CheckBox {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  width: 18px; height: 18px;
+  border: 1.5px solid var(--nngf-border);
+  border-radius: 4px;
+  background: var(--nngf-bg);
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color var(--nngf-transition), background var(--nngf-transition);
+}
+.NNGF-CheckBox:hover { border-color: var(--nngf-border-hover); }
+.NNGF-CheckBox:checked { background: var(--nngf-primary); border-color: var(--nngf-primary); }
+.NNGF-CheckBox:checked::after {
+  content: '';
+  position: absolute; left: 5px; top: 2px;
+  width: 5px; height: 9px;
+  border: solid #fff; border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.NNGF-CheckBox:focus-visible { outline: 2px solid var(--nngf-border-focus); outline-offset: 2px; }
+.NNGF-CheckBox:indeterminate { background: var(--nngf-primary); border-color: var(--nngf-primary); }
+.NNGF-CheckBox:indeterminate::after {
+  content: '';
+  position: absolute; left: 3px; top: 7px;
+  width: 10px; height: 2px;
+  background: #fff;
+}
+.NNGF-CheckBox:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== Slider ===== */
+.NNGF-Slider {
+  -webkit-appearance: none; appearance: none;
+  width: 200px; height: 4px;
+  background: var(--nngf-bg-tertiary);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+.NNGF-Slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--nngf-bg);
+  border: 1.5px solid var(--nngf-border-hover);
+  box-shadow: var(--nngf-shadow);
+  cursor: pointer;
+}
+.NNGF-Slider::-webkit-slider-thumb:hover { border-color: var(--nngf-primary); }
+.NNGF-Slider::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--nngf-bg);
+  border: 1.5px solid var(--nngf-border-hover);
+  cursor: pointer;
+}
+.NNGF-Slider:focus-visible { outline: 2px solid var(--nngf-border-focus); outline-offset: 2px; }
+.NNGF-Slider:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== ProgressBar ===== */
+.NNGF-ProgressBar {
+  display: flex; width: 100%;
+}
+.NNGF-ProgressBar-track {
+  flex: 1; height: 8px;
+  background: var(--nngf-bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.NNGF-ProgressBar-fill {
+  height: 100%;
+  background: var(--nngf-primary);
+  border-radius: 4px;
+  transition: width 300ms ease;
+}
+.NNGF-ProgressBar-fill-indeterminate {
+  width: 40%;
+  animation: nngf-progress-indeterminate 1.5s ease infinite;
+}
+@keyframes nngf-progress-indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+/* ===== Label ===== */
+.NNGF-Label {
+  font-family: inherit; font-size: inherit;
+  color: inherit; line-height: 1.4;
+}
+
+/* ===== Link ===== */
+.NNGF-Link {
+  font-family: inherit; font-size: inherit;
+  color: var(--nngf-primary);
+  text-decoration: none;
+  cursor: pointer;
+}
+.NNGF-Link:hover { text-decoration: underline; }
+
+/* ===== Separator ===== */
+.NNGF-Separator {
+  border: none;
+  height: 1px;
+  background: var(--nngf-border);
+  margin: 8px 0;
+  width: 100%;
+}
+
+/* ===== Panel ===== */
+.NNGF-Panel {
+  background: var(--nngf-bg);
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius-lg);
+  padding: var(--nngf-gap-lg);
+}
+
+/* ===== Card ===== */
+.NNGF-Card {
+  background: var(--nngf-bg);
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--nngf-shadow);
+}
+.NNGF-Card-header { padding: var(--nngf-gap-lg) var(--nngf-gap-lg) 0; font-weight: 600; }
+.NNGF-Card-body { padding: var(--nngf-gap-lg); }
+.NNGF-Card-footer { padding: 0 var(--nngf-gap-lg) var(--nngf-gap-lg); padding-top: var(--nngf-gap-lg); border-top: 1px solid var(--nngf-border); }
+
+/* ===== GroupBox ===== */
+.NNGF-GroupBox {
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius);
+  padding: var(--nngf-gap-lg);
+  padding-top: var(--nngf-gap-xl);
+  position: relative;
+}
+.NNGF-GroupBox-legend {
+  position: absolute; top: -8px; left: 12px;
+  background: var(--nngf-bg);
+  padding: 0 6px;
+  font-size: 12px; font-weight: 600;
+  color: var(--nngf-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== ScrollPane ===== */
+.NNGF-ScrollPane {
+  overflow: auto;
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius);
+  background: var(--nngf-bg);
+}
+.NNGF-ScrollPane::-webkit-scrollbar { width: 8px; }
+.NNGF-ScrollPane::-webkit-scrollbar-thumb { background: var(--nngf-border); border-radius: 4px; }
+
+/* ===== ListBox ===== */
+.NNGF-ListBox {
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius);
+  background: var(--nngf-bg);
+  overflow: auto;
+  min-height: 100px;
+}
+.NNGF-ListBox-item {
+  display: block;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: inherit;
+  color: inherit;
+}
+.NNGF-ListBox-item:hover { background: var(--nngf-bg-secondary); }
+.NNGF-ListBox-item-selected { background: rgba(0,113,227,0.1); color: var(--nngf-primary); font-weight: 500; }
+
+/* ===== Dialog (native <dialog>) ===== */
+.NNGF-Dialog {
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius-lg);
+  padding: 0;
+  box-shadow: var(--nngf-shadow-md);
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow: auto;
+}
+.NNGF-Dialog::backdrop {
+  background: rgba(0,0,0,0.4);
+}
+.NNGF-Dialog[open] {
+  display: flex; flex-direction: column;
+}
+
+/* ===== Toast ===== */
+.NNGF-Toast {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  background: var(--nngf-text);
+  color: var(--nngf-bg);
+  border-radius: var(--nngf-radius);
+  box-shadow: var(--nngf-shadow-md);
+  font-size: inherit;
+  pointer-events: auto;
+}
+
+/* ===== Alert ===== */
+.NNGF-Alert {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 16px;
+  border-radius: var(--nngf-radius);
+  background: var(--nngf-bg-secondary);
+  border: 1px solid var(--nngf-border);
+  font-size: inherit;
+}
+.NNGF-Alert-title { font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
+.NNGF-Alert-close { background: none; border: none; font-size: 18px; cursor: pointer; color: inherit; padding: 0 0 0 8px; line-height: 1; opacity: 0.6; }
+.NNGF-Alert-close:hover { opacity: 1; }
+.NNGF-Alert-body { font-size: 13px; color: var(--nngf-text-secondary); }
+
+/* ===== Badge ===== */
+.NNGF-Badge {
+  display: inline-flex; align-items: center;
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--nngf-bg-tertiary);
+  color: var(--nngf-text-secondary);
+  white-space: nowrap;
+}
+
+/* ===== Spinner ===== */
+.NNGF-Spinner {
+  display: inline-block;
+  width: 24px; height: 24px;
+  border: 3px solid var(--nngf-border);
+  border-top-color: var(--nngf-primary);
+  border-radius: 50%;
+  animation: nngf-spin 0.7s linear infinite;
+}
+@keyframes nngf-spin { to { transform: rotate(360deg); } }
+
+/* ===== CardPane ===== */
+nngf-cardpane {
+  display: block; position: relative;
+}
+
+/* ===== Accordion ===== */
+.NNGF-Accordion {
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius);
+  overflow: hidden;
+}
+.NNGF-Accordion details {
+  border-bottom: 1px solid var(--nngf-border);
+}
+.NNGF-Accordion details:last-child { border-bottom: none; }
+.NNGF-Accordion summary {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex; justify-content: space-between; align-items: center;
+  user-select: none;
+  font-family: inherit; font-size: inherit; color: inherit;
+  list-style: none;
+}
+.NNGF-Accordion summary::-webkit-details-marker { display: none; }
+.NNGF-Accordion summary::after {
+  content: '\25B6';
+  font-size: 10px;
+  transition: transform 200ms ease;
+}
+.NNGF-Accordion details[open] summary::after {
+  transform: rotate(90deg);
+}
+.NNGF-Accordion summary:hover { background: var(--nngf-bg-secondary); }
+.NNGF-Accordion-body { padding: 0 16px 12px; font-size: 13px; color: var(--nngf-text-secondary); }
+
+/* ===== Tooltip ===== */
+.NNGF-Tooltip {
+  position: relative; display: inline-flex; cursor: help;
+}
+.NNGF-Tooltip-content {
+  position: absolute;
+  bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: var(--nngf-radius-sm);
+  background: var(--nngf-text);
+  color: var(--nngf-bg);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  z-index: 50;
+}
+.NNGF-Tooltip:hover .NNGF-Tooltip-content { opacity: 1; }
+
+/* ===== Toolbar ===== */
+.NNGF-Toolbar {
+  display: flex; align-items: center; gap: 4px;
+  padding: 6px 8px;
+  background: var(--nngf-bg-secondary);
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius);
+}
+.NNGF-Toolbar-group { display: flex; align-items: center; gap: 2px; }
+.NNGF-Toolbar-sep {
+  width: 1px; height: 20px;
+  background: var(--nngf-border);
+  margin: 0 4px;
+}
+.NNGF-Toolbar button {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: inherit; font-size: 13px;
+  padding: 4px 10px;
+  border: none; border-radius: 4px;
+  background: transparent;
+  color: var(--nngf-text);
+  cursor: pointer;
+  gap: 4px;
+}
+.NNGF-Toolbar button:hover { background: var(--nngf-bg-tertiary); }
+.NNGF-Toolbar button:active { background: var(--nngf-border); }
+.NNGF-Toolbar button:focus-visible { outline: 2px solid var(--nngf-border-focus); outline-offset: 2px; }
+
+/* ===== Breadcrumbs ===== */
+.NNGF-Breadcrumbs {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px;
+  color: var(--nngf-text-secondary);
+}
+.NNGF-Breadcrumbs-item { color: inherit; cursor: pointer; }
+.NNGF-Breadcrumbs-item:hover { color: var(--nngf-text); }
+.NNGF-Breadcrumbs-item-active { color: var(--nngf-text); font-weight: 500; cursor: default; }
+.NNGF-Breadcrumbs-sep { color: var(--nngf-text-tertiary); user-select: none; }
+
+/* ===== Sidebar ===== */
+.NNGF-Sidebar {
+  width: 240px;
+  background: var(--nngf-bg);
+  border-right: 1px solid var(--nngf-border);
+  padding: var(--nngf-gap) 0;
+  overflow-y: auto;
+}
+.NNGF-Sidebar-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px;
+  cursor: pointer;
+  color: inherit;
+}
+.NNGF-Sidebar-item:hover { background: var(--nngf-bg-secondary); }
+.NNGF-Sidebar-item-active { background: rgba(0,113,227,0.1); color: var(--nngf-primary); font-weight: 500; }
+.NNGF-Sidebar-section { font-size: 11px; font-weight: 600; color: var(--nngf-text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 16px 4px; }
+
+/* ===== Table ===== */
+.NNGF-Table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: inherit;
+}
+.NNGF-Table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--nngf-border);
+  background: var(--nngf-bg-secondary);
+  font-size: 12px;
+}
+.NNGF-Table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--nngf-border);
+}
+.NNGF-Table tbody tr:hover { background: var(--nngf-bg-secondary); }
+
+/* ===== SplitPane ===== */
+.NNGF-SplitPane {
+  display: flex;
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius);
+  background: var(--nngf-bg);
+  overflow: hidden;
+}
+.NNGF-SplitPane-vertical { flex-direction: column; }
+.NNGF-SplitPane-divider {
+  flex-shrink: 0;
+  background: var(--nngf-border);
+  cursor: col-resize;
+}
+.NNGF-SplitPane-vertical .NNGF-SplitPane-divider { cursor: row-resize; width: 100%; height: 4px; }
+.NNGF-SplitPane-pane { overflow: auto; padding: var(--nngf-gap-lg); }
+
+/* ===== IFrame ===== */
+.NNGF-IFrame {
+  border: 1px solid var(--nngf-border);
+  border-radius: var(--nngf-radius);
+  width: 100%;
+}
+
+/* ===== Video ===== */
+.NNGF-Video { border-radius: var(--nngf-radius); max-width: 100%; }
+
+/* ===== Image ===== */
+.NNGF-Image { border-radius: var(--nngf-radius); max-width: 100%; height: auto; display: inline-block; }

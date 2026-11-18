@@ -11,15 +11,19 @@ import java.util.List;
 
 public class TelegramDatabase {
 
-    // Instantiate your team's official database module using their standard environment configuration
+    // Use the shared database module (HotelApp.databaseModule when running in-app).
     private final DatabaseModule db;
 
     public TelegramDatabase() {
-        String dbUrl = System.getenv("DB_URL") != null ? System.getenv("DB_URL") : "jdbc:sqlserver://localhost:1433;databaseName=HOTEL_DB;encrypt=true;trustServerCertificate=true;";
-        String dbUser = System.getenv("DB_USER") != null ? System.getenv("DB_USER") : "sa";
-        String dbPassword = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "YOUR_PASSWORD_HERE";
+        this.db = new SqlServerDatabaseModule(
+                "jdbc:sqlserver://localhost:1433;databaseName=HOTEL_DB;user=java_dev;password=123456789;encrypt=true;trustServerCertificate=true;",
+                "java_dev", "123456789");
+    }
 
-        this.db = new SqlServerDatabaseModule(dbUrl, dbUser, dbPassword);
+    public TelegramDatabase(DatabaseModule db) {
+        this.db = (db != null) ? db : new SqlServerDatabaseModule(
+                "jdbc:sqlserver://localhost:1433;databaseName=HOTEL_DB;user=java_dev;password=123456789;encrypt=true;trustServerCertificate=true;",
+                "java_dev", "123456789");
     }
 
     /**
@@ -108,6 +112,35 @@ public class TelegramDatabase {
 
         } catch (SQLException e) {
             System.err.println("Database error saving message log: " + e.getMessage());
+        }
+    }
+
+    /** Validates and consumes a link code, linking the customer's telegram chat id. Returns true on success. */
+    public boolean consumeLinkCode(String code, long chatId) {
+        try {
+            return db.consumeTelegramLinkCode(code, chatId);
+        } catch (SQLException e) {
+            System.err.println("Database error consuming link code: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /** Removes expired (unused) link codes. */
+    public void clearExpiredLinkCodes() {
+        try {
+            db.clearExpiredTelegramLinkCodes();
+        } catch (SQLException e) {
+            System.err.println("Database error clearing expired link codes: " + e.getMessage());
+        }
+    }
+
+    /** Returns the booking (with customer) for a valid, non-expired link code, or null. */
+    public org.example.Core.DatabaseModule.model.Booking getBookingByLinkCode(String code) {
+        try {
+            return db.getBookingByTelegramLinkCode(code);
+        } catch (SQLException e) {
+            System.err.println("Database error looking up link code: " + e.getMessage());
+            return null;
         }
     }
 }

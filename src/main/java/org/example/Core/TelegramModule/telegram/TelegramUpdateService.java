@@ -16,11 +16,15 @@ public class TelegramUpdateService {
     private final HttpClient client;
     private final ObjectMapper mapper;
     private final TelegramBotService telegram = new TelegramBotService();
-    private final TelegramDatabase telegramDb = new TelegramDatabase();
+    private final TelegramDatabase telegramDb;
 
     private long lastUpdateId = 0;
 
     public TelegramUpdateService() {
+        this(null);
+    }
+
+    public TelegramUpdateService(org.example.Core.DatabaseModule.db.DatabaseModule db) {
         botToken = System.getenv("TELEGRAM_BOT_TOKEN");
 
         if (botToken == null || botToken.isBlank()) {
@@ -32,6 +36,7 @@ public class TelegramUpdateService {
                 .build();
 
         mapper = new ObjectMapper();
+        telegramDb = new TelegramDatabase(db);
     }
 
     public void startPolling() {
@@ -81,8 +86,19 @@ public class TelegramUpdateService {
                         continue;
                     }
 
-                    // Handle /start command with Deep Linking (e.g., /start B001)
-                    if (text.startsWith("/start")) {
+                    // Handle /start register_<code> deep link first (must precede generic /start)
+                    if (text.startsWith("/start register_")) {
+                        String rcode = text.substring("/start register_".length()).trim();
+                        if (!rcode.isEmpty()) {
+                            boolean rok = telegramDb.consumeLinkCode(rcode, Long.parseLong(chatId));
+                            if (rok) {
+                                telegram.sendMessage(chatId, "Successfully linked! You will now receive booking notifications here.");
+                                telegramDb.saveMessageRecord(Long.parseLong(chatId), "Linked via deep link " + rcode, "SENT");
+                            } else {
+                                telegram.sendMessage(chatId, "Invalid or expired code. Please ask the front desk for a new one.");
+                            }
+                        }
+                    } else if (text.startsWith("/start")) {
                         String[] parts = text.split(" ");
 
                         if (parts.length > 1) {
@@ -110,6 +126,20 @@ public class TelegramUpdateService {
                                     chatId,
                                     "Hello! Welcome to our Hotel Booking System.\n\nPlease use your unique booking link to register."
                             );
+                        }
+                    } else if (text.startsWith("/register")) {
+                        String[] rparts = text.split(" ");
+                        String rcode = (rparts.length > 1) ? rparts[1].trim() : "";
+                        if (rcode.isEmpty()) {
+                            telegram.sendMessage(chatId, "Usage: /register <code> (code given at the front desk).");
+                        } else {
+                            boolean rok = telegramDb.consumeLinkCode(rcode, Long.parseLong(chatId));
+                            if (rok) {
+                                telegram.sendMessage(chatId, "Successfully linked! You will now receive booking notifications here.");
+                                telegramDb.saveMessageRecord(Long.parseLong(chatId), "Linked via code " + rcode, "SENT");
+                            } else {
+                                telegram.sendMessage(chatId, "Invalid or expired code. Please ask the front desk for a new one.");
+                            }
                         }
                     }
                 }

@@ -1,0 +1,502 @@
+/* ========================================
+   Metal Polish Theme for NNGF2
+   Neumorphic / Soft UI look & feel.
+   All elements share one background;
+   depth is created via dual shadows
+   (dark + light) instead of borders.
+   ======================================== */
+
+:root {
+  /* ---- Dark neumorphic palette ---- */
+  --neu-bg: #2a2a2a;
+  --neu-text: #e0e0e0;
+  --neu-text-muted: #aaaaaa;
+  --neu-shadow-dark: #1f1f1f;
+  --neu-shadow-light: #353535;
+  --neu-accent: #6ab0f3;
+  --neu-radius: 12px;
+  --neu-radius-sm: 8px;
+  --neu-radius-lg: 16px;
+
+  /* Map to NNGF API */
+  --nngf-bg: var(--neu-bg);
+  --nngf-bg-secondary: var(--neu-bg);
+  --nngf-bg-tertiary: var(--neu-bg);
+  --nngf-text: var(--neu-text);
+  --nngf-text-secondary: var(--neu-text-muted);
+  --nngf-text-tertiary: var(--neu-text-muted);
+  --nngf-border: transparent;
+  --nngf-border-hover: transparent;
+  --nngf-border-focus: var(--neu-accent);
+  --nngf-primary: var(--neu-accent);
+  --nngf-primary-text: #ffffff;
+  --nngf-radius: var(--neu-radius);
+  --nngf-radius-sm: var(--neu-radius-sm);
+  --nngf-radius-lg: var(--neu-radius-lg);
+  --nngf-shadow: 6px 6px 12px var(--neu-shadow-dark), -6px -6px 12px var(--neu-shadow-light);
+  --nngf-shadow-md: 10px 10px 20px var(--neu-shadow-dark), -10px -10px 20px var(--neu-shadow-light);
+  --nngf-transition: 200ms ease;
+  --nngf-font: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --nngf-gap: 8px;
+  --nngf-gap-lg: 16px;
+}
+
+[data-theme="light"] {
+  /* ---- Light neumorphic palette ---- */
+  --neu-bg: #e8e8e8;
+  --neu-text: #090909;
+  --neu-text-muted: #666666;
+  --neu-shadow-dark: #c5c5c5;
+  --neu-shadow-light: #ffffff;
+  --neu-accent: #4a90e2;
+
+  --nngf-bg: var(--neu-bg);
+  --nngf-bg-secondary: var(--neu-bg);
+  --nngf-bg-tertiary: var(--neu-bg);
+  --nngf-text: var(--neu-text);
+  --nngf-text-secondary: var(--neu-text-muted);
+  --nngf-text-tertiary: var(--neu-text-muted);
+  --nngf-border: transparent;
+  --nngf-border-hover: transparent;
+  --nngf-border-focus: var(--neu-accent);
+  --nngf-primary: var(--neu-accent);
+  --nngf-primary-text: #ffffff;
+  --nngf-radius: var(--neu-radius);
+  --nngf-radius-sm: var(--neu-radius-sm);
+  --nngf-radius-lg: var(--neu-radius-lg);
+  --nngf-shadow: 6px 6px 12px var(--neu-shadow-dark), -6px -6px 12px var(--neu-shadow-light);
+  --nngf-shadow-md: 10px 10px 20px var(--neu-shadow-dark), -10px -10px 20px var(--neu-shadow-light);
+  --nngf-transition: 200ms ease;
+  --nngf-font: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --nngf-gap: 8px;
+  --nngf-gap-lg: 16px;
+}
+
+/* ---- Page defaults ---- */
+html, body {
+  background: var(--neu-bg);
+  color: var(--neu-text);
+  font-family: var(--nngf-font);
+  margin: 0;
+}
+
+/* ---- Scrollbar ---- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--neu-shadow-dark) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--neu-bg);
+  border-radius: 4px;
+  box-shadow: inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light);
+}
+*::-webkit-scrollbar-thumb:hover {
+  box-shadow: inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light);
+  background: var(--neu-text-muted);
+}
+*::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---- Global typography & transition ---- */
+.NNGF-Button,
+.NNGF-ToggleButton,
+.NNGF-TextField,
+.NNGF-NumberField,
+.NNGF-TextArea,
+.NNGF-ComboBox,
+.NNGF-CheckBox,
+.NNGF-Slider,
+.NNGF-ProgressBar,
+.NNGF-Label,
+.NNGF-Link,
+.NNGF-Separator,
+.NNGF-Panel,
+.NNGF-Card,
+.NNGF-GroupBox,
+.NNGF-ScrollPane,
+.NNGF-ListBox,
+.NNGF-Dialog,
+.NNGF-Toast,
+.NNGF-Alert,
+.NNGF-Badge,
+.NNGF-Spinner,
+.NNGF-Accordion,
+.NNGF-Tooltip,
+.NNGF-Toolbar,
+.NNGF-Breadcrumbs,
+.NNGF-Sidebar,
+.NNGF-Table,
+.NNGF-SplitPane,
+.NNGF-IFrame,
+.NNGF-Video,
+.NNGF-Image {
+  font-family: var(--nngf-font);
+  color: var(--nngf-text);
+  transition: var(--nngf-transition);
+}
+
+/* ===== Button (raised idle, inset active) ===== */
+.NNGF-Button {
+  border: none;
+  background: var(--neu-bg);
+  color: var(--neu-text);
+  box-shadow: 6px 6px 12px var(--neu-shadow-dark), -6px -6px 12px var(--neu-shadow-light);
+  font-weight: 600;
+}
+.NNGF-Button:hover { color: var(--neu-accent); }
+.NNGF-Button:active {
+  box-shadow: inset 4px 4px 12px var(--neu-shadow-dark), inset -4px -4px 12px var(--neu-shadow-light);
+  color: var(--neu-text-muted);
+  opacity: 1;
+}
+.NNGF-Button:focus-visible { outline: 2px solid var(--neu-accent); outline-offset: 2px; }
+.NNGF-Button:disabled { opacity: 0.5; box-shadow: none; }
+
+/* ===== ToggleButton (inset track, raised thumb) ===== */
+.NNGF-ToggleButton {
+  width: 50px; height: 26px;
+  background: var(--neu-bg);
+  border: none;
+  border-radius: 20px;
+  box-shadow: inset 3px 3px 6px var(--neu-shadow-dark), inset -3px -3px 6px var(--neu-shadow-light);
+}
+.NNGF-ToggleButton::after {
+  content: '';
+  position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px;
+  background: var(--neu-bg);
+  border-radius: 50%;
+  box-shadow: 2px 2px 5px var(--neu-shadow-dark), -2px -2px 5px var(--neu-shadow-light);
+  transition: var(--nngf-transition);
+}
+.NNGF-ToggleButton:checked { background: var(--neu-bg); }
+.NNGF-ToggleButton:checked::after {
+  left: 27px;
+  background: var(--neu-accent);
+  box-shadow: none;
+}
+.NNGF-ToggleButton:focus-visible { outline: 2px solid var(--neu-accent); outline-offset: 2px; }
+.NNGF-ToggleButton:disabled { opacity: 0.5; }
+
+/* ===== Text inputs (inset) ===== */
+.NNGF-TextField,
+.NNGF-NumberField,
+.NNGF-TextArea {
+  border: none;
+  background: var(--neu-bg);
+  color: var(--neu-text);
+  box-shadow: inset 4px 4px 8px var(--neu-shadow-dark), inset -4px -4px 8px var(--neu-shadow-light);
+}
+.NNGF-TextField:focus,
+.NNGF-NumberField:focus,
+.NNGF-TextArea:focus {
+  box-shadow: inset 4px 4px 8px var(--neu-shadow-dark), inset -4px -4px 8px var(--neu-shadow-light);
+  border-color: transparent;
+  outline: none;
+}
+.NNGF-TextField:disabled,
+.NNGF-NumberField:disabled,
+.NNGF-TextArea:disabled { opacity: 0.5; }
+
+/* ===== ComboBox (inset) ===== */
+.NNGF-ComboBox {
+  border: none;
+  background: var(--neu-bg);
+  color: var(--neu-text);
+  box-shadow: inset 4px 4px 8px var(--neu-shadow-dark), inset -4px -4px 8px var(--neu-shadow-light);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.NNGF-ComboBox:focus {
+  box-shadow: inset 4px 4px 8px var(--neu-shadow-dark), inset -4px -4px 8px var(--neu-shadow-light);
+  border-color: transparent;
+  outline: none;
+}
+.NNGF-ComboBox:disabled { opacity: 0.5; }
+
+/* ===== CheckBox (inset, accent when checked) ===== */
+.NNGF-CheckBox {
+  width: 24px; height: 24px;
+  background: var(--neu-bg);
+  border: none;
+  border-radius: 6px;
+  box-shadow: inset 3px 3px 6px var(--neu-shadow-dark), inset -3px -3px 6px var(--neu-shadow-light);
+}
+.NNGF-CheckBox:hover { border-color: transparent; }
+.NNGF-CheckBox:checked {
+  background: var(--neu-accent);
+  box-shadow: none;
+}
+.NNGF-CheckBox:checked::after {
+  left: 7px; top: 3px;
+  width: 6px; height: 10px;
+  border-color: var(--neu-bg);
+}
+.NNGF-CheckBox:focus-visible { outline: 2px solid var(--neu-accent); outline-offset: 2px; }
+.NNGF-CheckBox:indeterminate { background: var(--neu-accent); box-shadow: none; }
+.NNGF-CheckBox:indeterminate::after {
+  left: 4px; top: 10px;
+  width: 14px; height: 2px;
+  background: var(--neu-bg);
+}
+.NNGF-CheckBox:disabled { opacity: 0.5; }
+
+/* ===== Slider (inset track, raised thumb) ===== */
+.NNGF-Slider {
+  height: 8px;
+  background: transparent;
+  border-radius: 4px;
+  box-shadow: inset 3px 3px 6px var(--neu-shadow-dark), inset -3px -3px 6px var(--neu-shadow-light);
+}
+.NNGF-Slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 20px;
+  background: var(--neu-bg);
+  border: none;
+  border-radius: 50%;
+  box-shadow: 3px 3px 6px var(--neu-shadow-dark), -3px -3px 6px var(--neu-shadow-light);
+  cursor: pointer;
+}
+.NNGF-Slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
+.NNGF-Slider::-moz-range-thumb {
+  width: 20px; height: 20px;
+  background: var(--neu-bg);
+  border: none;
+  border-radius: 50%;
+  box-shadow: 3px 3px 6px var(--neu-shadow-dark), -3px -3px 6px var(--neu-shadow-light);
+  cursor: pointer;
+}
+.NNGF-Slider:focus-visible { outline: 2px solid var(--neu-accent); outline-offset: 2px; }
+.NNGF-Slider:disabled { opacity: 0.5; }
+
+/* ===== ProgressBar (inset track, raised accent fill) ===== */
+.NNGF-ProgressBar-track {
+  height: 12px;
+  background: var(--neu-bg);
+  border-radius: 6px;
+  box-shadow: inset 3px 3px 6px var(--neu-shadow-dark), inset -3px -3px 6px var(--neu-shadow-light);
+}
+.NNGF-ProgressBar-fill {
+  background: var(--neu-accent);
+  border-radius: 6px;
+  box-shadow: 2px 2px 4px var(--neu-shadow-dark);
+}
+
+/* ===== Card / Panel (raised) ===== */
+.NNGF-Card, .NNGF-Panel {
+  background: var(--neu-bg);
+  border: none;
+  box-shadow: var(--nngf-shadow);
+}
+
+/* ===== Card parts ===== */
+.NNGF-Card-header {
+  background: var(--neu-bg);
+  border-bottom: none;
+  color: var(--neu-text-muted);
+}
+.NNGF-Card-footer {
+  background: var(--neu-bg);
+  border-top: none;
+}
+
+/* ===== GroupBox ===== */
+.NNGF-GroupBox {
+  border: none;
+  box-shadow: inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light);
+}
+.NNGF-GroupBox-legend {
+  background: var(--neu-bg);
+  color: var(--neu-text-muted);
+}
+
+/* ===== Dialog (raised) ===== */
+.NNGF-Dialog {
+  background: var(--neu-bg);
+  border: none;
+  box-shadow: var(--nngf-shadow-md);
+}
+.NNGF-Dialog::backdrop { background: rgba(0,0,0,0.5); }
+
+/* ===== Toast (raised) ===== */
+.NNGF-Toast {
+  background: var(--neu-bg);
+  border: none;
+  color: var(--neu-text);
+  box-shadow: var(--nngf-shadow-md);
+}
+
+/* ===== Alert (inset) ===== */
+.NNGF-Alert {
+  background: var(--neu-bg);
+  border: none;
+  color: var(--neu-text);
+  box-shadow: inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light);
+}
+.NNGF-Alert-title { font-weight: 600; }
+.NNGF-Alert-close { color: inherit; }
+.NNGF-Alert-body { color: var(--neu-text-muted); }
+
+/* ===== Badge (small raised pill) ===== */
+.NNGF-Badge {
+  background: var(--neu-bg);
+  color: var(--neu-text-muted);
+  border: none;
+  box-shadow: 2px 2px 4px var(--neu-shadow-dark), -2px -2px 4px var(--neu-shadow-light);
+}
+
+/* ===== Accordion (raised container, inset body) ===== */
+.NNGF-Accordion {
+  background: var(--neu-bg);
+  border: none;
+  box-shadow: var(--nngf-shadow);
+}
+.NNGF-Accordion details { border-bottom: none; }
+.NNGF-Accordion summary {
+  background: var(--neu-bg);
+  color: inherit;
+  box-shadow: inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light);
+}
+.NNGF-Accordion summary:hover { background: var(--neu-shadow-light); }
+.NNGF-Accordion-body { color: var(--neu-text-muted); }
+
+/* ===== ListBox (inset) ===== */
+.NNGF-ListBox {
+  background: var(--neu-bg);
+  border: none;
+  box-shadow: inset 3px 3px 6px var(--neu-shadow-dark), inset -3px -3px 6px var(--neu-shadow-light);
+}
+.NNGF-ListBox-item { border-bottom: none; color: inherit; }
+.NNGF-ListBox-item:hover { background: var(--neu-shadow-light); }
+.NNGF-ListBox-item-selected {
+  background: var(--neu-shadow-light);
+  border-left: 2px solid var(--neu-accent);
+  color: var(--neu-text);
+  font-weight: 500;
+}
+
+/* ===== ScrollPane ===== */
+.NNGF-ScrollPane {
+  background: var(--neu-bg);
+  border: none;
+}
+.NNGF-ScrollPane::-webkit-scrollbar { width: 8px; height: 8px; }
+.NNGF-ScrollPane::-webkit-scrollbar-track { background: transparent; }
+.NNGF-ScrollPane::-webkit-scrollbar-thumb {
+  background: var(--neu-bg);
+  border-radius: 4px;
+  box-shadow: inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light);
+}
+.NNGF-ScrollPane::-webkit-scrollbar-thumb:hover {
+  background: var(--neu-text-muted);
+}
+.NNGF-ScrollPane::-webkit-scrollbar-corner { background: transparent; }
+
+/* ===== Tooltip (raised) ===== */
+.NNGF-Tooltip-content {
+  background: var(--neu-shadow-light);
+  color: var(--neu-text);
+  border: none;
+  box-shadow: 3px 3px 6px var(--neu-shadow-dark), -3px -3px 6px var(--neu-shadow-light);
+}
+
+/* ===== Toolbar (raised) ===== */
+.NNGF-Toolbar {
+  background: var(--neu-bg);
+  border: none;
+  box-shadow: var(--nngf-shadow);
+}
+.NNGF-Toolbar button {
+  background: transparent;
+  color: var(--neu-text);
+  border: none;
+}
+.NNGF-Toolbar button:hover { background: var(--neu-shadow-light); }
+.NNGF-Toolbar button:active { background: transparent; }
+.NNGF-Toolbar-sep {
+  background: transparent;
+  width: 1px;
+  height: 20px;
+  box-shadow: 1px 0 0 var(--neu-shadow-light), -1px 0 0 var(--neu-shadow-dark);
+}
+
+/* ===== Separator (shadow line) ===== */
+.NNGF-Separator {
+  background: transparent;
+  height: 1px;
+  box-shadow: 0 1px 0 var(--neu-shadow-light), 0 -1px 0 var(--neu-shadow-dark);
+  margin: 12px 0;
+}
+
+/* ===== Sidebar ===== */
+.NNGF-Sidebar {
+  background: var(--neu-bg);
+  border-right: none;
+  box-shadow: 2px 0 6px var(--neu-shadow-dark);
+}
+.NNGF-Sidebar-item { color: var(--neu-text-muted); }
+.NNGF-Sidebar-item:hover { background: var(--neu-shadow-light); color: var(--neu-text); }
+.NNGF-Sidebar-item-active {
+  background: var(--neu-shadow-light);
+  color: var(--neu-accent);
+  border-left-color: var(--neu-accent);
+  box-shadow: inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light);
+}
+.NNGF-Sidebar-section { color: var(--neu-text-muted); }
+
+/* ===== Table ===== */
+.NNGF-Table th {
+  background: var(--neu-shadow-light);
+  color: var(--neu-text);
+  border-bottom: none;
+  font-weight: 600;
+}
+.NNGF-Table td {
+  border-bottom: 1px solid var(--neu-shadow-dark);
+  color: var(--neu-text);
+}
+.NNGF-Table tbody tr:hover td { background: var(--neu-shadow-light); }
+
+/* ===== SplitPane ===== */
+.NNGF-SplitPane {
+  background: var(--neu-bg);
+  border: none;
+  box-shadow: var(--nngf-shadow);
+}
+.NNGF-SplitPane-divider {
+  background: transparent;
+  width: 2px;
+  box-shadow: 1px 0 0 var(--neu-shadow-light), -1px 0 0 var(--neu-shadow-dark);
+}
+.NNGF-SplitPane-vertical .NNGF-SplitPane-divider {
+  width: 100%;
+  height: 2px;
+  box-shadow: 0 1px 0 var(--neu-shadow-light), 0 -1px 0 var(--neu-shadow-dark);
+}
+
+/* ===== Spinner ===== */
+.NNGF-Spinner {
+  border-color: var(--neu-shadow-dark);
+  border-top-color: var(--neu-accent);
+}
+
+/* ===== IFrame ===== */
+.NNGF-IFrame {
+  border: none;
+  box-shadow: var(--nngf-shadow);
+}
+
+/* ===== Label ===== */
+.NNGF-Label { color: inherit; }
+
+/* ===== Link ===== */
+.NNGF-Link { color: var(--neu-accent); }
+
+/* ===== Breadcrumbs ===== */
+.NNGF-Breadcrumbs { color: var(--neu-text-muted); }
+.NNGF-Breadcrumbs-item { color: var(--neu-text-muted); }
+.NNGF-Breadcrumbs-item:hover { color: var(--neu-accent); }
+.NNGF-Breadcrumbs-item-active { color: var(--neu-text); }
+.NNGF-Breadcrumbs-sep { color: var(--neu-text-muted); }

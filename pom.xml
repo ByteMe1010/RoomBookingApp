@@ -7,15 +7,14 @@
     <groupId>com.byteme</groupId>
     <artifactId>RoomBookApp</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>27</maven.compiler.source>
         <maven.compiler.target>27</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
         <javafx.version>27</javafx.version>
     </properties>
-
 
     <dependencies>
         <!-- Database Dependency -->
@@ -25,7 +24,7 @@
             <version>12.6.1.jre11</version>
         </dependency>
 
-        <!-- JSON Processing (Jackson for Telegram) -->
+        <!-- JSON Processing (Jackson) -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -57,7 +56,6 @@
             <scope>test</scope>
         </dependency>
 
-
         <!-- HTML Escaping -->
         <dependency>
             <groupId>org.unbescape</groupId>
@@ -65,13 +63,12 @@
             <version>1.1.6.RELEASE</version>
         </dependency>
 
-        <!-- JavaFX Dependencies (Now using 27) -->
+        <!-- JavaFX Dependencies -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-        <!-- javafx-web transitively brings javafx-controls, javafx-media and jdk-jsobject -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-web</artifactId>
@@ -85,38 +82,79 @@
             <version>1.5.7</version>
         </dependency>
 
-        <!-- Mockito Core -->
+        <!-- Mockito -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>5.5.0</version>
             <scope>test</scope>
         </dependency>
-
-        <!-- Mockito JUnit 5 Extension -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
             <version>5.5.0</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
+        <!-- Forces the output jar to be named RoomBookApp.jar -->
+        <finalName>RoomBookApp</finalName>
+
         <plugins>
-            <!-- Maven Surefire Plugin for Testing -->
+            <!-- 1. Compiler Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
+
+            <!-- 2. Surefire Plugin for Tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
                 <configuration>
-                    <!-- Offline workaround: cached Byte Buddy 1.14.6 predates Java 27.
-                         Replace with a Java 27-supported Mockito/Byte Buddy release when available. -->
-                    <systemPropertyVariables>
-                        <net.bytebuddy.experimental>true</net.bytebuddy.experimental>
-                    </systemPropertyVariables>
+                    <argLine>-Dnet.bytebuddy.experimental=true</argLine>
                 </configuration>
+            </plugin>
+
+            <!-- 3. Shade Plugin: Creates the standalone executable Fat JAR -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>org.example.gui.HotelLauncher</mainClass>
+                                </transformer>
+                                <!-- CRITICAL for JavaFX: Merges native library service files -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

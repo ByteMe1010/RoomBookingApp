@@ -173,15 +173,8 @@ public class RoomHandler {
                         break;
                 }
 
-                cards.append("<div class=\"room-card ").append(statusClass).append("\">")
-                        .append("<div><div class=\"room-card-header\"><span class=\"room-number-lg\">Room ")
-                        .append(escape(room.getRoomNumber())).append("</span>")
-                        .append("<span class=\"badge ").append(badgeClass).append("\">")
-                        .append(status).append("</span></div>")
-                        .append("<div class=\"room-type-text\">").append(escape(room.getRoomType())).append("</div></div>")
-                        .append("<div class=\"room-card-footer\"><div class=\"room-price-val\">$")
-                        .append(String.format(Locale.US, "%.2f", room.getPricePerNight()))
-                        .append(" <span>/ night</span></div>").append(action).append("</div></div>");
+                cards.append(new org.example.gui.components.RoomCard(
+                        "room-card-" + room.getRoomId(), room, status).buildHtml(""));
             }
 
             if (visibleCount == 0) {

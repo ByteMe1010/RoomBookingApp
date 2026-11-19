@@ -95,22 +95,8 @@ public class InventoryHandler {
 
                 String rowStyle = active ? "" : "style=\"opacity:0.7;background-color:#fafafa;\"";
 
-                rows.append("<tr ").append(rowStyle).append(">")
-                        .append("<td>#").append(item.getItemId()).append("</td>")
-                        .append("<td><strong>").append(escape(item.getName())).append("</strong>")
-                        .append(active ? "" : " <span class=\"badge badge-closed\" style=\"margin-left:6px;font-size:0.7rem;\">Archived</span>")
-                        .append("</td>")
-                        .append("<td>").append(methodBadge).append("</td>")
-                        .append("<td>$").append(String.format(Locale.US, "%.2f", item.getPricePerUnit())).append("</td>")
-                        .append("<td>").append(stockDisplay).append("</td>")
-                        .append("<td>").append(activeToggle).append("</td>")
-                        .append("<td><button class=\"btn btn-sm btn-primary btn-restock-item\" "
-                        + "data-id=\"" + item.getItemId() + "\" "
-                        + "data-name=\"" + escape(item.getName()) + "\" "
-                        + "data-stock=\"" + String.format(Locale.US, "%.2f", item.getStockAmount()) + "\" "
-                        + "data-method=\"" + method + "\" "
-                        + "data-price=\"" + String.format(Locale.US, "%.2f", item.getPricePerUnit()) + "\">Restock</button></td>")
-                        .append("</tr>");
+                rows.append(new org.example.gui.components.InventoryRow(
+                        "inv-" + item.getItemId(), item, method, lowStock).buildHtml(""));
             }
 
             if (visibleCount == 0) {

@@ -1,0 +1,7 @@
+Subject: New reservation
+
+Reservation ID: SIM-107
+Guest name: Duplicate Guest
+Check-in: 2027-07-01
+Check-out: 2027-07-03
+Reservation ID: SIM-107-OTHER

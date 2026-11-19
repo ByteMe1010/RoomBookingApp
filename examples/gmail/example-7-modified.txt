@@ -1,0 +1,8 @@
+Subject: New reservation - modified
+
+Reservation ID: SIM-106
+Guest name: Modified Guest
+Check-in: 2027-06-10
+Check-out: 2027-06-12
+Room: Single
+Rooms: 1

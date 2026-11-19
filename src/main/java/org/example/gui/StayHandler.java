@@ -137,28 +137,8 @@ public class StayHandler {
 
                 String assignedRooms = roomNumbers.length() == 0 ? "None assigned" : roomNumbers.toString();
 
-                rows.append("<tr>")
-                        .append("<td><strong style=\"color:var(--color-primary);\">#")
-                        .append(booking.getBookingId()).append("</strong></td>")
-                        .append("<td><div style=\"font-weight:600;\">")
-                        .append(escape(customerName)).append("</div>")
-                        .append("<small style=\"color:var(--color-text-muted);\">")
-                        .append(escape(customerPhone)).append("</small></td>")
-                        .append("<td>").append(escape(assignedRooms)).append("</td>")
-                        .append("<td><strong>").append(booking.getCheckIn()).append("</strong> → <strong>")
-                        .append(booking.getCheckOut()).append("</strong><br>")
-                        .append("<small style=\"color:var(--color-text-muted);\">")
-                        .append(nights).append(" night(s)</small></td>")
-                        .append("<td><span class=\"badge ").append(statusClass).append("\">")
-                        .append(escape(status)).append("</span></td>")
-                        .append("<td><div>Total: <strong>$").append(String.format(Locale.US, "%.2f", total))
-                        .append("</strong></div><div>Paid: $")
-                        .append(String.format(Locale.US, "%.2f", paid)).append("</div><div>Balance: <strong>$")
-                        .append(String.format(Locale.US, "%.2f", balance)).append("</strong></div></td>")
-                        .append("<td><button id=\"folio-open-").append(booking.getBookingId())
-                        .append("\" class=\"btn btn-sm btn-outline btn-open-folio\" data-id=\"")
-                        .append(booking.getBookingId()).append("\" style=\"font-weight:600;color:var(--color-primary);\">Folio & Ledger →</button></td>")
-                        .append("</tr>");
+                rows.append(new org.example.gui.components.StayRow(
+                        "stay-" + booking.getBookingId(), booking, customer, assignedRooms, nights, total, paid, balance, statusClass).buildHtml(""));
             }
 
             if (visibleCount == 0) {

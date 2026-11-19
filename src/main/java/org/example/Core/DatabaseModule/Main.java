@@ -9,9 +9,9 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
         // Read database configuration from environment variables or use generic defaults
-        String dbUrl = System.getenv("DB_URL") != null ? System.getenv("DB_URL") : "jdbc:sqlserver://localhost:1433;databaseName=HOTEL_DB;encrypt=true;trustServerCertificate=true;";
-        String dbUser = System.getenv("DB_USER") != null ? System.getenv("DB_USER") : "sa";
-        String dbPassword = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "YOUR_PASSWORD_HERE";
+        String dbUrl = System.getenv("DB_URL");
+        String dbUser = System.getenv("DB_USER");
+        String dbPassword = System.getenv("DB_PASSWORD");
 
         System.out.println("=== Running HOTEL_DB DAO Verification ===");
         DatabaseModule db = new SqlServerDatabaseModule(dbUrl, dbUser, dbPassword);

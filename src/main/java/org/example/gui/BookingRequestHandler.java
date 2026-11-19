@@ -352,8 +352,8 @@ public class BookingRequestHandler {
 
     private static void openGmailSimulateModal(NWindow window) {
         GmailIntegrationService svc = HotelApp.gmailService;
-        if (svc == null || !svc.isConfigured()) {
-            HotelApp.showToast(window, svc == null ? "Gmail is not configured." : svc.missingConfigMessage(), "warn");
+        if (svc == null) {
+            HotelApp.showToast(window, "Gmail simulation is unavailable.", "warn");
             return;
         }
 
@@ -362,28 +362,49 @@ public class BookingRequestHandler {
         Div body = Div.of(window, "modal-body");
         Div footer = Div.of(window, "modal-footer");
 
+        String saveButtonId = "btn-save-test-" + System.nanoTime();
         title.setInnerText("Simulate Gmail Booking");
         body.setInnerHTML("<div class=\"form-group\">"
                 + "<label class=\"form-label\" for=\"gmail-sim-blob\">Paste an example Gmail message (subject + body):</label>"
-                + "<textarea id=\"gmail-sim-blob\" class=\"form-control\" rows=\"12\" placeholder=\"Reservation ID: SIM-123\\nGuest name: Sample Guest\\nCheck-in: 2027-01-01\\nCheck-out: 2027-01-03\\nRoom: Double\\nRooms: 2\\nPhone: 12345\"></textarea>"
+                + "<textarea id=\"gmail-sim-blob\" class=\"form-control\" rows=\"12\">Subject: New reservation\nReservation ID: VIVA-SYN-002\nGuest name: Sample Guest\nCheck-in: 2027-01-01\nCheck-out: 2027-01-03\nRoom: Double\nRooms: 2\nPhone: 12345</textarea>"
+                + "<p>Saving is available only for HOTEL_DB_TEST and reference VIVA-SYN-002.</p>"
                 + "</div>");
         footer.setInnerHTML("<button id=\"btn-modal-cancel\" class=\"btn btn-outline btn-sm\">Cancel</button>"
-                + "<button id=\"btn-modal-confirm-simulate\" class=\"btn btn-primary btn-sm\">Run Simulation</button>");
+                + "<button id=\"" + saveButtonId + "\" class=\"btn btn-outline btn-sm\" disabled>Save to Test Database</button>"
+                + "<button id=\"btn-modal-confirm-simulate\" class=\"btn btn-primary btn-sm\">Parse Only</button>");
 
         modal.classList.remove("hidden");
 
         Button.of(window, "btn-modal-cancel").onClick(e -> closeGmailSimulateModal(window));
+        Button.of(window, saveButtonId).onClick(e -> {
+            String blob = TextArea.of(window, "gmail-sim-blob").value();
+            title.setInnerText("Confirm Test Database Insert");
+            body.setInnerText("Insert the validated VIVA-SYN-002 synthetic reservation into HOTEL_DB_TEST? Existing requests will not be changed.");
+            footer.setInnerHTML("<button id=\"btn-save-cancel\" class=\"btn btn-outline btn-sm\">Cancel</button>"
+                    + "<button id=\"btn-save-confirm\" class=\"btn btn-primary btn-sm\">Confirm Insert</button>");
+            Button.of(window, "btn-save-cancel").onClick(cancel -> closeGmailSimulateModal(window));
+            Button.of(window, "btn-save-confirm").onClick(confirm -> {
+                closeGmailSimulateModal(window);
+                svc.saveSyntheticToTestDatabase(blob, true, result -> {
+                    switch (result) {
+                        case INSERTED -> { updateCards(window); updateTable(window); HotelApp.showToast(window, "Synthetic request saved to HOTEL_DB_TEST.", "success"); }
+                        case DUPLICATE -> HotelApp.showToast(window, "Duplicate request: nothing was inserted.", "warn");
+                        case REJECTED -> HotelApp.showToast(window, "Reservation rejected: check the synthetic message and reference.", "warn");
+                        case FAILED -> HotelApp.showToast(window, "Save failed; verify the test database and connection.", "error");
+                    }
+                });
+            });
+        });
+        svc.checkTestDatabase(available -> {
+            if (available) window.executeJS("{const b=document.getElementById('" + saveButtonId + "'); if(b) b.disabled=false;}");
+        });
         Button.of(window, "btn-modal-confirm-simulate").onClick(e -> {
             TextArea area = TextArea.of(window, "gmail-sim-blob");
             String blob = area.value();
             closeGmailSimulateModal(window);
             HotelApp.showToast(window, "Running simulation...", "info");
             svc.simulate(blob,
-                    () -> {
-                        updateCards(window);
-                        updateTable(window);
-                        HotelApp.showToast(window, "Simulation finished. Requests refreshed.", "success");
-                    },
+                    result -> HotelApp.showToast(window, result.message(), result.succeeded() ? "success" : "warn"),
                     t -> HotelApp.showToast(window, "Simulation failed: " + t.getClass().getSimpleName(), "error")
             );
         });

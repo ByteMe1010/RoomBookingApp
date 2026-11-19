@@ -15,15 +15,12 @@ public class TelegramDatabase {
     private final DatabaseModule db;
 
     public TelegramDatabase() {
-        this.db = new SqlServerDatabaseModule(
-                "jdbc:sqlserver://localhost:1433;databaseName=HOTEL_DB;user=java_dev;password=123456789;encrypt=true;trustServerCertificate=true;",
-                "java_dev", "123456789");
+        this(null);
     }
 
     public TelegramDatabase(DatabaseModule db) {
         this.db = (db != null) ? db : new SqlServerDatabaseModule(
-                "jdbc:sqlserver://localhost:1433;databaseName=HOTEL_DB;user=java_dev;password=123456789;encrypt=true;trustServerCertificate=true;",
-                "java_dev", "123456789");
+                System.getenv("DB_URL"), System.getenv("DB_USER"), System.getenv("DB_PASSWORD"));
     }
 
     /**

@@ -21,6 +21,12 @@ public final class BookingRequestRepository {
         this.url = url; this.user = user; this.password = password;
         this.requireTestDatabase = requireTestDatabase;
     }
+    public boolean isTestDatabase() throws SQLException {
+        try (Connection connection = JdbcConnections.open(url, user, password)) {
+            verifyTestDatabase(connection);
+            return true;
+        }
+    }
     public boolean saveIfNew(String messageId, BookingNotice booking) throws SQLException {
         if (requireTestDatabase && !GmailDemoPolicy.REFERENCE.equals(booking.reference()))
             throw new SQLException("Controlled database writes require the synthetic reservation reference");

@@ -76,8 +76,14 @@ public class FolioHandler {
                 double subtotal = rate * nights;
                 roomCharges += subtotal;
 
-                roomRows.append(new org.example.gui.components.FolioRoomRow(
-                        "folio-room-" + bookingRoom.getRoomId(), room, rate, nights, subtotal).buildHtml(""));
+                roomRows.append("<tr><td><strong>Room ").append(room == null ? "Unknown" : escape(room.getRoomNumber()))
+                        .append("</strong>");
+                if (room != null) {
+                    roomRows.append(" (").append(escape(room.getRoomType())).append(")");
+                }
+                roomRows.append("</td><td>$").append(money(rate)).append("/night</td>")
+                        .append("<td>").append(nights).append(" night(s)</td>")
+                        .append("<td style=\"text-align:right;font-weight:700;\">$").append(money(subtotal)).append("</td></tr>");
             }
 
             if (roomRows.length() == 0) {
@@ -93,10 +99,22 @@ public class FolioHandler {
                 double subtotal = order.getAmount() * order.getUnitPrice();
                 itemCharges += subtotal;
                 String method = item == null ? "COUNT" : (item.getMeasuringMethod() == null ? "COUNT" : item.getMeasuringMethod().toUpperCase(Locale.ROOT));
-                boolean showCancel = "ACTIVE".equals(status) || "PENDING".equals(status);
 
-                itemRows.append(new org.example.gui.components.FolioItemRow(
-                        "folio-item-" + order.getOrderId(), order, item, method, subtotal, showCancel).buildHtml(""));
+                itemRows.append("<tr><td><strong>").append(item == null ? "Unknown Item" : escape(item.getName()))
+                        .append("</strong> <span class=\"badge ")
+                        .append("COUNT".equals(method) ? "badge-count" : "badge-continuous")
+                        .append("\">").append(method).append("</span></td>")
+                        .append("<td>$").append(money(order.getUnitPrice())).append("</td>")
+                        .append("<td>").append(String.format(Locale.US, "%.2f", order.getAmount())).append("</td>")
+                        .append("<td style=\"text-align:right;font-weight:700;\">$").append(money(subtotal)).append("</td>")
+                        .append("<td style=\"text-align:right;\">");
+
+                if ("ACTIVE".equals(status) || "PENDING".equals(status)) {
+                    itemRows.append("<button id=\"folio-cancel-order-").append(order.getOrderId())
+                            .append("\" class=\"btn btn-sm btn-outline btn-delete-folio-order\" data-order-id=\"")
+                            .append(order.getOrderId()).append("\" style=\"padding:2px 6px;color:#ef4444;\" title=\"Cancel Order & Restock\">&times;</button>");
+                }
+                itemRows.append("</td></tr>");
             }
 
             if (itemOrders.isEmpty()) {
@@ -113,8 +131,10 @@ public class FolioHandler {
                         ? ""
                         : payment.getPaidAt().toString().replace('T', ' ');
 
-                paymentRows.append(new org.example.gui.components.FolioPaymentRow(
-                        "folio-payment-" + payment.getPaymentId(), payment, paidAt).buildHtml(""));
+                paymentRows.append("<tr><td>Payment #").append(payment.getPaymentId()).append("</td>")
+                        .append("<td><span class=\"badge badge-active\">").append(escape(payment.getMethod())).append("</span></td>")
+                        .append("<td><small style=\"color:var(--color-text-muted);\">").append(escape(paidAt)).append("</small></td>")
+                        .append("<td style=\"text-align:right;font-weight:700;color:#059669;\">-$").append(money(payment.getAmount())).append("</td></tr>");
             }
 
             if (payments.isEmpty()) {
@@ -130,8 +150,12 @@ public class FolioHandler {
                 List<Item> activeItems = HotelApp.databaseModule.getAllActiveItems();
                 for (Item item : activeItems) {
                     if (defaultItem == null) defaultItem = item;
-                    itemOptions.append(new org.example.gui.components.FolioItemOption(
-                            "folio-item-opt-" + item.getItemId(), item).buildHtml(""));
+                    itemOptions.append("<option value=\"").append(item.getItemId()).append("\"")
+                            .append(" data-method=\"").append(normalizeMethod(item.getMeasuringMethod())).append("\"")
+                            .append(" data-stock=\"").append(String.format(Locale.US, "%.2f", item.getStockAmount())).append("\">")
+                            .append(escape(item.getName())).append(" ($").append(money(item.getPricePerUnit())).append(" / ")
+                            .append("COUNT".equalsIgnoreCase(item.getMeasuringMethod()) ? "unit" : "metric")
+                            .append(") [Stock: ").append(String.format(Locale.US, "%.2f", item.getStockAmount())).append("]</option>");
                 }
             }
 

@@ -1,9 +1,0 @@
-Subject: New reservation
-
-<p><strong>Reservation ID:</strong> SIM-104</p>
-<p><strong>Guest name:</strong> Ruwan Fernando</p>
-<p><strong>Check-in:</strong> 2027-05-01</p>
-<p><strong>Check-out:</strong> 2027-05-05</p>
-<p><strong>Room:</strong> Executive Suite</p>
-<p><strong>Rooms:</strong> 1</p>
-<p><strong>Phone:</strong> 0723456789</p>

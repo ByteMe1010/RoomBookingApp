@@ -43,8 +43,17 @@ public class TelegramHandler {
                 List<org.example.Core.DatabaseModule.model.Message> msgs =
                         HotelApp.databaseModule.getMessagesForCustomer(c.getCustomerId());
                 for (org.example.Core.DatabaseModule.model.Message m : msgs) {
-                    rows.append(new org.example.gui.components.TelegramMessageRow(
-                            "tg-msg-" + m.getMessageId(), m, c.getFullName()).buildHtml(""));
+                    String status = m.getStatus() == null ? "" : m.getStatus().toUpperCase();
+                    String badge = "SENT".equals(status)
+                            ? "<span class=\"badge badge-success\">SENT</span>"
+                            : "<span class=\"badge badge-failed\">FAILED</span>";
+                    rows.append("<tr>")
+                            .append("<td>").append(m.getMessageId()).append("</td>")
+                            .append("<td>").append(escape(c.getFullName())).append("</td>")
+                            .append("<td>").append(badge).append("</td>")
+                            .append("<td>").append(escape(m.getContent())).append("</td>")
+                            .append("<td>").append(m.getSentAt() == null ? "-" : m.getSentAt().toString()).append("</td>")
+                            .append("</tr>");
                 }
             }
             if (rows.length() == 0) {
@@ -71,10 +80,23 @@ public class TelegramHandler {
                 }
                 Long chatId = c.getTelegramChatId();
                 boolean linked = chatId != null;
-                String registered = c.getCreatedAt() == null ? "-" : c.getCreatedAt().toString();
-                rows.append(new org.example.gui.components.TelegramCustomerRow(
-                        "tg-cust-" + c.getCustomerId(), c.getCustomerId(), name, phone, linked,
-                        linked ? chatId : 0L, c.getTimesDenied(), registered).buildHtml(""));
+                String statusBadge = linked
+                        ? "<span class=\"badge badge-success\">Linked</span>"
+                        : "<span class=\"badge badge-muted\">Not registered</span>";
+                String chatCell = linked ? String.valueOf(chatId) : "-";
+                String actions = linked
+                        ? "<button class=\"btn btn-outline btn-sm btn-send-tg\" data-id=\"" + c.getCustomerId() + "\" data-chat=\"" + chatId + "\">Send Message</button>"
+                        : "<span style=\"color:var(--color-text-muted);font-size:0.8rem;\">-</span>";
+
+                rows.append("<tr>")
+                        .append("<td>").append(c.getCustomerId()).append("</td>")
+                        .append("<td>").append(escape(name)).append("<br><small>").append(escape(phone)).append("</small></td>")
+                        .append("<td>").append(statusBadge).append("</td>")
+                        .append("<td>").append(chatCell).append("</td>")
+                        .append("<td>").append(c.getTimesDenied()).append("</td>")
+                        .append("<td>").append(c.getCreatedAt() == null ? "-" : c.getCreatedAt().toString()).append("</td>")
+                        .append("<td>").append(actions).append("</td>")
+                        .append("</tr>");
             }
             if (rows.length() == 0) {
                 rows.append("<tr><td colspan=\"7\" style=\"text-align:center;padding:2rem;\">No customers found.</td></tr>");

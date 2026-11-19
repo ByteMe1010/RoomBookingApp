@@ -351,15 +351,11 @@ public class BookingRequestHandler {
     }
 
     private static void openGmailSimulateModal(NWindow window) {
-        GmailIntegrationService svc0 = HotelApp.gmailService;
-        if (svc0 == null || !svc0.canSimulate()) {
-            if (HotelApp.databaseModule == null) {
-                HotelApp.showToast(window, "Database is not available.", "warn");
-                return;
-            }
-            svc0 = GmailIntegrationService.forSimulate(HotelApp.databaseModule);
+        GmailIntegrationService svc = HotelApp.gmailService;
+        if (svc == null) {
+            HotelApp.showToast(window, "Gmail simulation is unavailable.", "warn");
+            return;
         }
-        final GmailIntegrationService svc = svc0;
 
         Div modal = Div.of(window, "modal-container");
         Div title = Div.of(window, "modal-title");

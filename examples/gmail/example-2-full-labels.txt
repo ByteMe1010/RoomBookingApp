@@ -1,9 +1,0 @@
-Subject: Booking.com: New reservation - ref 9876543210
-
-Booking reference: 9876543210
-Guest: Synthetic & Example
-Arrival date: 18 November 2026
-Departure date: 21 Nov 2026
-Room type: Deluxe Double
-Number of rooms: 2
-Guest phone: +00 000 0000

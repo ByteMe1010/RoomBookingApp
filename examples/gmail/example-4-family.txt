@@ -1,9 +1,0 @@
-Subject: New reservation
-
-Reservation ID: SIM-103
-Guest name: Anoma Jayasinghe
-Check-in: 2027-04-15
-Check-out: 2027-04-20
-Room: Family Suite
-Rooms: 3
-Phone: 0715551234

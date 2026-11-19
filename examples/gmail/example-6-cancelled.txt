@@ -1,9 +1,0 @@
-Subject: Reservation cancelled
-
-Reservation ID: SIM-105
-Guest name: Cancelled Guest
-Check-in: 2027-06-01
-Check-out: 2027-06-03
-Room: Double
-Rooms: 1
-Phone: 0770000000

@@ -1,9 +1,0 @@
-Subject: New reservation
-
-Reservation ID: SIM-101
-Guest name: Amal Perera
-Check-in: 2027-02-10
-Check-out: 2027-02-13
-Room: Deluxe Double
-Rooms: 1
-Phone: 0771234567

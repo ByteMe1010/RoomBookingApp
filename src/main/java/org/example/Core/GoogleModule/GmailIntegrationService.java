@@ -30,8 +30,6 @@ public final class GmailIntegrationService {
     private final Path tokenDir;
     private final String sender;
     private final boolean testMode;
-    private final java.time.Instant cutoff;
-    private final String referenceFilter;
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "gmail-integration");
         t.setDaemon(true);
@@ -44,15 +42,12 @@ public final class GmailIntegrationService {
     private GmailPollingService simService;      // null client (for Simulate)
     private BookingNotice simulatedBooking;
 
-    public GmailIntegrationService(DatabaseModule db, Path clientFile, Path tokenDir, String sender, boolean testMode,
-                                  java.time.Instant cutoff, String referenceFilter) {
+    public GmailIntegrationService(DatabaseModule db, Path clientFile, Path tokenDir, String sender, boolean testMode) {
         this.db = db;
         this.clientFile = clientFile;
         this.tokenDir = tokenDir;
         this.sender = sender;
         this.testMode = testMode;
-        this.cutoff = (cutoff == null) ? java.time.Instant.now().minus(7, java.time.temporal.ChronoUnit.DAYS) : cutoff;
-        this.referenceFilter = referenceFilter;
     }
 
     /** Builds a service from environment variables; returns null if not configured. */
@@ -65,29 +60,12 @@ public final class GmailIntegrationService {
             LOG.info("Gmail integration not configured (missing GMAIL_CLIENT_JSON/GMAIL_TOKEN_DIR/GMAIL_BOOKING_SENDER).");
             return new GmailIntegrationService(db, null, null, "simulation@example.invalid", true);
         }
-        boolean testMode = "true".equalsIgnoreCase(System.getenv().getOrDefault("GMAIL_TEST_MODE", "false"));
-        java.time.Instant cutoff = null;
-        String cutoffEnv = System.getenv("GMAIL_INITIAL_CUTOFF");
-        if (cutoffEnv != null && !cutoffEnv.isBlank()) {
-            try { cutoff = java.time.Instant.parse(cutoffEnv); } catch (Exception ignored) { }
-        }
-        String reference = System.getenv("GMAIL_RESERVATION_REFERENCE");
-        return new GmailIntegrationService(db, Path.of(client), Path.of(tokens), sender, testMode, cutoff, reference);
-    }
-
-    /** Service that works without Gmail credentials, for the "Simulate" flow (parse + save to DB). */
-    public static GmailIntegrationService forSimulate(DatabaseModule db) {
-        return new GmailIntegrationService(db, null, null, "simulated@example.com", true,
-                java.time.Instant.now().minus(7, java.time.temporal.ChronoUnit.DAYS), null);
+        boolean testMode = !"false".equalsIgnoreCase(System.getenv().getOrDefault("GMAIL_TEST_MODE", "true"));
+        return new GmailIntegrationService(db, Path.of(client), Path.of(tokens), sender, testMode);
     }
 
     public boolean isConfigured() {
         return clientFile != null && tokenDir != null && sender != null;
-    }
-
-    /** Whether the simulate flow can run (always true when a database module is available). */
-    public boolean canSimulate() {
-        return db != null;
     }
 
     public String missingConfigMessage() {
@@ -109,7 +87,7 @@ public final class GmailIntegrationService {
                 return repository::saveIfNew;
             });
             if (gmail == null) gmail = new GmailAuthentication().connect(clientFile, tokenDir);
-            service = new GmailPollingService(gmail, new DatabaseBookingSink(db), sender, false, cutoff, referenceFilter);
+            service = new GmailPollingService(gmail, sink, sender, testMode, cutoff, reference);
             return service;
         }
     }
@@ -132,16 +110,8 @@ public final class GmailIntegrationService {
     public void simulate(String blob, java.util.function.Consumer<SimulationResult> onResult, java.util.function.Consumer<Throwable> onError) {
         executor.submit(() -> {
             try {
-                if (blob == null || blob.isBlank()) throw new IllegalArgumentException("Message blob is empty");
-                Message message = buildSimulatedMessage(blob);
-                GmailPollingService svc;
-                synchronized (lock) {
-                    if (simService == null) simService = new GmailPollingService(null, new DatabaseBookingSink(db), sender, false, cutoff, referenceFilter);
-                    svc = simService;
-                }
-                boolean handled = svc.processMessage(message);
-                if (!handled) LOG.info("Simulated message was not a new valid booking (duplicate or invalid).");
-                if (onSuccess != null) javafx.application.Platform.runLater(onSuccess);
+                SimulationResult result = simulateMessage(blob);
+                if (onResult != null) javafx.application.Platform.runLater(() -> onResult.accept(result));
             } catch (Throwable t) {
                 LOG.warning("Gmail simulate failed: " + t.getClass().getName());
                 if (onError != null) javafx.application.Platform.runLater(() -> onError.accept(t));
@@ -212,12 +182,10 @@ public final class GmailIntegrationService {
         }
         String bodyText = body.toString().trim();
         if (bodyText.isEmpty()) bodyText = blob.trim();
-        String mimeType = (bodyText.contains("<") && bodyText.contains(">")) ? "text/html" : "text/plain";
         String encoded = Base64.getUrlEncoder().encodeToString(bodyText.getBytes(StandardCharsets.UTF_8));
-        return new Message().setId("sim-" + System.nanoTime())
-                .setInternalDate(java.time.Instant.now().toEpochMilli())
-                .setPayload(new MessagePart().setMimeType(mimeType)
-                        .setHeaders(List.of(new MessagePartHeader().setName("Subject").setValue(subject)))
+        return new Message().setId("sim-" + System.nanoTime()).setInternalDate(System.currentTimeMillis())
+                .setPayload(new MessagePart().setMimeType("text/plain")
+                        .setHeaders(List.of(new MessagePartHeader().setName("Subject").setValue(subject), new MessagePartHeader().setName("From").setValue(sender)))
                         .setBody(new MessagePartBody().setData(encoded)));
     }
 }

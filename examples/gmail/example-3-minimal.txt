@@ -1,6 +1,0 @@
-Subject: New booking
-
-Reservation ID: SIM-102
-Guest name: Nimal Silva
-Check-in: 2027-03-01
-Check-out: 2027-03-04

@@ -1,8 +1,0 @@
-Subject: New reservation
-
-Reservation ID: SIM-108
-Guest name: Bad Date Guest
-Check-in: 2027-08-05
-Check-out: 2027-08-01
-Room: Double
-Rooms: 1

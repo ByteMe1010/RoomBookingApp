@@ -22,7 +22,11 @@ public class SqlServerDatabaseModule implements DatabaseModule {
     }
 
     private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+        return org.example.Core.DatabaseModule.JdbcConnections.open(dbUrl, dbUser, dbPassword);
+    }
+
+    public org.example.Core.GoogleModule.BookingRequestRepository testBookingRequestRepository() {
+        return new org.example.Core.GoogleModule.BookingRequestRepository(dbUrl, dbUser, dbPassword, true);
     }
 
     // ==========================================

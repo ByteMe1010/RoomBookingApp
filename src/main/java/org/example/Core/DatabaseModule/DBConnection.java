@@ -22,9 +22,9 @@ public class DBConnection {
     private static DBConnection INSTANCE;
 
     //TODO: Fill those according to ports and paths before running the program
-    String dbUrl = System.getenv("DB_URL") != null ? System.getenv("DB_URL") : "jdbc:sqlserver://localhost:1433;databaseName=HOTEL_DB;encrypt=true;trustServerCertificate=true;";
-    String dbUser = System.getenv("DB_USER") != null ? System.getenv("DB_USER") : "sa";
-    String dbPassword = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "YOUR_PASSWORD_HERE";
+    String dbUrl = System.getenv("DB_URL");
+    String dbUser = System.getenv("DB_USER");
+    String dbPassword = System.getenv("DB_PASSWORD");
     private Connection connection;
 
     public static DBConnection getInstance(){
@@ -36,7 +36,7 @@ public class DBConnection {
 
     private DBConnection(){
         try {
-            connection = DriverManager.getConnection(dbUrl,dbUser,dbPassword);
+            connection = JdbcConnections.open(dbUrl,dbUser,dbPassword);
         } catch (SQLException e) {
             System.out.println("Connection Failed! Check does database URL,Username and password settted up correctly in DBConnection.java file\n and check does database is active in given port, also try adding trustServerCertificate=true to database URL properties list(Ask a AI how to)");
             throw new RuntimeException(e);

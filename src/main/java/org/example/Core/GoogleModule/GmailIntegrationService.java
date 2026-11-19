@@ -9,6 +9,7 @@ import com.google.api.services.gmail.model.MessagePartHeader;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -22,6 +23,7 @@ import java.util.logging.Logger;
  */
 public final class GmailIntegrationService {
     private static final Logger LOG = Logger.getLogger(GmailIntegrationService.class.getName());
+    private static final String SIMULATION_SENDER = "simulation@example.invalid";
 
     private final DatabaseModule db;
     private final Path clientFile;
@@ -40,6 +42,7 @@ public final class GmailIntegrationService {
     private Gmail gmail;
     private GmailPollingService service;          // real client (for Check Gmail)
     private GmailPollingService simService;      // null client (for Simulate)
+    private BookingNotice simulatedBooking;
 
     public GmailIntegrationService(DatabaseModule db, Path clientFile, Path tokenDir, String sender, boolean testMode,
                                   java.time.Instant cutoff, String referenceFilter) {
@@ -60,7 +63,7 @@ public final class GmailIntegrationService {
         if (client == null || client.isBlank() || tokens == null || tokens.isBlank()
                 || sender == null || sender.isBlank()) {
             LOG.info("Gmail integration not configured (missing GMAIL_CLIENT_JSON/GMAIL_TOKEN_DIR/GMAIL_BOOKING_SENDER).");
-            return null;
+            return new GmailIntegrationService(db, null, null, "simulation@example.invalid", true);
         }
         boolean testMode = "true".equalsIgnoreCase(System.getenv().getOrDefault("GMAIL_TEST_MODE", "false"));
         java.time.Instant cutoff = null;
@@ -95,6 +98,16 @@ public final class GmailIntegrationService {
     private GmailPollingService ensureService() throws Exception {
         synchronized (lock) {
             if (service != null) return service;
+            String cutoffValue = System.getenv("GMAIL_INITIAL_CUTOFF");
+            if (cutoffValue == null || cutoffValue.isBlank()) throw new IllegalArgumentException("GMAIL_INITIAL_CUTOFF is required");
+            Instant cutoff = Instant.parse(cutoffValue);
+            String reference = GmailModuleMain.controlledReference(testMode, System.getenv("GMAIL_ALLOW_TEST_DB_WRITES"), System.getenv("GMAIL_RESERVATION_REFERENCE"));
+            GmailPollingService.BookingSink sink = GmailModuleMain.selectSink(testMode, () -> {
+                String url = System.getenv("BOOKING_JDBC_URL");
+                if (url == null || url.isBlank()) throw new IllegalArgumentException("BOOKING_JDBC_URL is required");
+                var repository = new BookingRequestRepository(url, System.getenv("BOOKING_DB_USER"), System.getenv("BOOKING_DB_PASSWORD"), true);
+                return repository::saveIfNew;
+            });
             if (gmail == null) gmail = new GmailAuthentication().connect(clientFile, tokenDir);
             service = new GmailPollingService(gmail, new DatabaseBookingSink(db), sender, false, cutoff, referenceFilter);
             return service;
@@ -116,7 +129,7 @@ public final class GmailIntegrationService {
     }
 
     /** Runs the simulated flow for a pasted message blob on a background thread. */
-    public void simulate(String blob, Runnable onSuccess, java.util.function.Consumer<Throwable> onError) {
+    public void simulate(String blob, java.util.function.Consumer<SimulationResult> onResult, java.util.function.Consumer<Throwable> onError) {
         executor.submit(() -> {
             try {
                 if (blob == null || blob.isBlank()) throw new IllegalArgumentException("Message blob is empty");
@@ -136,12 +149,56 @@ public final class GmailIntegrationService {
         });
     }
 
+    public record SimulationResult(BookingNotice booking, String message) {
+        public boolean succeeded() { return booking != null; }
+    }
+
+    public enum SaveResult { INSERTED, DUPLICATE, REJECTED, FAILED }
+
+    private SyntheticBookingSaver testDatabaseSaver() {
+        if (!(db instanceof org.example.Core.DatabaseModule.db.SqlServerDatabaseModule sql))
+            return new SyntheticBookingSaver(null);
+        BookingRequestRepository repository = sql.testBookingRequestRepository();
+        return new SyntheticBookingSaver(new SyntheticBookingSaver.Repository() {
+            public boolean isTestDatabase() throws Exception { return repository.isTestDatabase(); }
+            public boolean saveIfNew(String id, BookingNotice booking) throws Exception { return repository.saveIfNew(id, booking); }
+        });
+    }
+
+    public void checkTestDatabase(java.util.function.Consumer<Boolean> callback) {
+        executor.submit(() -> {
+            boolean available = testDatabaseSaver().isAvailable();
+            javafx.application.Platform.runLater(() -> callback.accept(available));
+        });
+    }
+
+    public void saveSyntheticToTestDatabase(String blob, boolean confirmed, java.util.function.Consumer<SaveResult> callback) {
+        executor.submit(() -> {
+            SaveResult result = SaveResult.valueOf(testDatabaseSaver().save(blob, confirmed).name());
+            javafx.application.Platform.runLater(() -> callback.accept(result));
+        });
+    }
+
+    /** In-memory only; serialized with the other simulation calls. */
+    SimulationResult simulateMessage(String blob) throws Exception {
+        synchronized (lock) {
+            if (blob == null || blob.isBlank()) return new SimulationResult(null, "Enter a booking message.");
+            if (simService == null) simService = new GmailPollingService(null,
+                    (id, booking) -> simulatedBooking = booking, SIMULATION_SENDER, false, Instant.EPOCH);
+            simulatedBooking = null;
+            boolean handled = simService.processMessage(buildSimulatedMessage(blob, SIMULATION_SENDER));
+            if (!handled || simulatedBooking == null)
+                return new SimulationResult(null, "Message rejected: duplicate, cancelled, or invalid booking.");
+            return new SimulationResult(simulatedBooking, "Booking parsed; no database changes were made.");
+        }
+    }
+
     public void shutdown() {
         executor.shutdownNow();
     }
 
     /** Builds a Gmail Message from a pasted blob, extracting an optional Subject header. */
-    static Message buildSimulatedMessage(String blob) {
+    static Message buildSimulatedMessage(String blob, String sender) {
         String subject = "New reservation";
         StringBuilder body = new StringBuilder();
         for (String line : blob.split("\\R", -1)) {

@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class HotelApp extends Application {
-    public static DatabaseModule databaseModule = new SqlServerDatabaseModule("jdbc:sqlserver://localhost:1433;databaseName=HOTEL_DB;user=java_dev;password=123456789;encrypt=true;trustServerCertificate=true;","java_dev","123456789");
+    public static DatabaseModule databaseModule = new SqlServerDatabaseModule(System.getenv("DB_URL"), System.getenv("DB_USER"), System.getenv("DB_PASSWORD"));
     public static AuthService authService = new AuthService(databaseModule);
     public static ShopOwner  shopOwner=null;
     public static GmailIntegrationService gmailService;

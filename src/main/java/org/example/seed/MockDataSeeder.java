@@ -17,9 +17,13 @@ import java.util.List;
  */
 public class MockDataSeeder {
     public static void main(String[] args) {
+        String adminPassword = System.getenv("SEED_ADMIN_PASSWORD");
+        String deskPassword = System.getenv("SEED_DESK_PASSWORD");
+        if (adminPassword == null || adminPassword.isBlank() || deskPassword == null || deskPassword.isBlank()) {
+            throw new IllegalArgumentException("Set SEED_ADMIN_PASSWORD and SEED_DESK_PASSWORD before seeding");
+        }
         DatabaseModule db = new SqlServerDatabaseModule(
-                "jdbc:sqlserver://localhost:1433;databaseName=HOTEL_DB;user=java_dev;password=123456789;encrypt=true;trustServerCertificate=true;",
-                "java_dev", "123456789");
+                System.getenv("DB_URL"), System.getenv("DB_USER"), System.getenv("DB_PASSWORD"));
 
         try {
             List<ShopOwner> existing = db.getAllShopOwners();
@@ -32,10 +36,10 @@ public class MockDataSeeder {
             System.out.println("Seeding mock data...");
 
             // ---------- Shop owners ----------
-            PasswordManager.HashResult hr1 = PasswordManager.hashPassword("admin123");
+            PasswordManager.HashResult hr1 = PasswordManager.hashPassword(adminPassword);
             ShopOwner owner1 = new ShopOwner("admin", hr1.hash, hr1.salt, "Eleanor Vance");
             int ownerId1 = db.createShopOwner(owner1);
-            PasswordManager.HashResult hr2 = PasswordManager.hashPassword("desk123");
+            PasswordManager.HashResult hr2 = PasswordManager.hashPassword(deskPassword);
             ShopOwner owner2 = new ShopOwner("david_desk", hr2.hash, hr2.salt, "David Miller");
             int ownerId2 = db.createShopOwner(owner2);
             System.out.println("  owners: " + ownerId1 + ", " + ownerId2);

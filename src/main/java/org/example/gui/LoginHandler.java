@@ -35,15 +35,16 @@ public class LoginHandler {
 
                 if (username.isEmpty() || password.isEmpty()) {
                     HotelApp.showToastWarn(window, "Username or password cannot be empty!");
+                    return;
                 }
 
                 Optional<ShopOwner> user = HotelApp.authService.login(username, password);
 
-                if (user.isPresent() || username.equals("tester")) {
+                if (user.isPresent()) {
                     Div.of(window, "login-screen").classList.add("hidden");
                     Div.of(window, "register-screen").classList.add("hidden");
                     Div.of(window, "app-shell").classList.remove("hidden");
-                    HotelApp.shopOwner = user.orElse(new ShopOwner(-1, "tester", "1234", "1234", "Tester Account", LocalDateTime.now(), LocalDateTime.now()));
+                    HotelApp.shopOwner = user.get();
                     onLogin.accept(window);
                 } else {
                     HotelApp.showToastWarn(window, "Username or password is incorrect!");
